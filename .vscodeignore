@@ -1,6 +1,7 @@
 src/**
 tests/**
 docs/**
+.superpowers/**
 node_modules/**
 .gitignore
 esbuild.js
