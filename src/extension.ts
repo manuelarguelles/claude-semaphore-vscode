@@ -9,6 +9,7 @@ import { styleFor } from './theme';
 import { TitleResolver } from './titleResolver';
 import { Notifier } from './notifier';
 import { AfplaySoundPlayer } from './soundPlayer';
+import { TerminalLinker, psParentPid } from './terminalLinker';
 
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
 const SESSIONS_DIR = path.join(CLAUDE_DIR, 'sessions');
@@ -71,10 +72,19 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
   private emitter = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.emitter.event;
   private sessions: SessionState[] = [];
+  private terminals = new Map<number, vscode.Terminal>();
 
   setSessions(sessions: SessionState[]): void {
     this.sessions = sessions;
     this.emitter.fire();
+  }
+
+  setTerminals(m: Map<number, vscode.Terminal>): void {
+    this.terminals = m;
+  }
+
+  hasTerminal(pid: number): boolean {
+    return this.terminals.has(pid);
   }
 
   getChildren(): SessionState[] {
@@ -91,6 +101,16 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
     item.iconPath = style.colorId
       ? new vscode.ThemeIcon(style.icon, new vscode.ThemeColor(style.colorId))
       : new vscode.ThemeIcon(style.icon);
+    if (this.terminals.has(s.pid)) {
+      item.contextValue = 'sessionWithTerminal';
+      item.command = {
+        command: 'claudeSemaphore.revealTerminal',
+        title: 'Revelar terminal',
+        arguments: [s.pid],
+      };
+    } else {
+      item.tooltip = `${s.title}\n${s.cwd}\n${label}\n(sin terminal en esta ventana)`;
+    }
     return item;
   }
 }
@@ -128,10 +148,13 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   });
 
+  const linker = new TerminalLinker({ getParentPid: psParentPid });
+  const terminalByPid = new Map<number, vscode.Terminal>();
+
   let warnedSchema = false;
   let tickCount = 0;
 
-  const refresh = (source: string): void => {
+  const refresh = async (source: string): Promise<void> => {
     const seq = ++tickCount;
     dbg(`refresh #${seq} (${source}) @ ${new Date().toISOString()}`);
     try {
@@ -145,6 +168,14 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       });
 
+      terminalByPid.clear();
+      await Promise.all(sessions.map(async (s) => {
+        const t = await linker.resolve({ pid: s.pid, cwd: s.cwd }, vscode.window.terminals);
+        if (t) { terminalByPid.set(s.pid, t as vscode.Terminal); }
+      }));
+      linker.prune(new Set(sessions.map((s) => s.pid)));
+
+      tree.setTerminals(terminalByPid);
       tree.setSessions(sessions);
       notifier.update(sessions);
 
@@ -195,6 +226,16 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('claudeSemaphore')) { refresh('config'); }
     }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('claudeSemaphore.revealTerminal', (pid: number) => {
+      terminalByPid.get(pid)?.show(false);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.window.onDidCloseTerminal(() => refresh('terminalClosed')),
   );
 
   dbg('activated');

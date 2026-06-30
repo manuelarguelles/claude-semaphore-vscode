@@ -57,7 +57,15 @@
       { "id": "claudeSemaphore.colorblind.running", "description": "Running (colorblind)", "defaults": { "dark": "#0072B2", "light": "#0072B2", "highContrast": "#0072B2" } },
       { "id": "claudeSemaphore.colorblind.needsInput", "description": "Needs input (colorblind)", "defaults": { "dark": "#E69F00", "light": "#E69F00", "highContrast": "#E69F00" } },
       { "id": "claudeSemaphore.colorblind.stopped", "description": "Stopped (colorblind)", "defaults": { "dark": "#D55E00", "light": "#D55E00", "highContrast": "#D55E00" } }
-    ]
+    ],
+    "commands": [
+      { "command": "claudeSemaphore.revealTerminal", "title": "Revelar terminal", "category": "Claude Semáforo" }
+    ],
+    "menus": {
+      "view/item/context": [
+        { "command": "claudeSemaphore.revealTerminal", "when": "view == claudeSemaphore.sessions && viewItem == sessionWithTerminal", "group": "navigation" }
+      ]
+    }
   },
   "scripts": {
     "build": "node esbuild.js",
