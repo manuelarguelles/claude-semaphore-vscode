@@ -83,10 +83,6 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
     this.terminals = m;
   }
 
-  hasTerminal(pid: number): boolean {
-    return this.terminals.has(pid);
-  }
-
   getChildren(): SessionState[] {
     return this.sessions;
   }
@@ -168,11 +164,13 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       });
 
-      terminalByPid.clear();
+      const next = new Map<number, vscode.Terminal>();
       await Promise.all(sessions.map(async (s) => {
         const t = await linker.resolve({ pid: s.pid, cwd: s.cwd }, vscode.window.terminals);
-        if (t) { terminalByPid.set(s.pid, t as vscode.Terminal); }
+        if (t) { next.set(s.pid, t as vscode.Terminal); }
       }));
+      terminalByPid.clear();
+      for (const [pid, term] of next) { terminalByPid.set(pid, term); }
       linker.prune(new Set(sessions.map((s) => s.pid)));
 
       tree.setTerminals(terminalByPid);
@@ -230,7 +228,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('claudeSemaphore.revealTerminal', (pid: number) => {
-      terminalByPid.get(pid)?.show(false);
+      const t = terminalByPid.get(pid);
+      if (!t || t.exitStatus !== undefined) { return; }
+      try { t.show(false); } catch { /* terminal vanished between lookup and show */ }
     }),
   );
 
