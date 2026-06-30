@@ -42,8 +42,15 @@ function listSessionFiles(): { path: string; raw: unknown }[] {
   return out;
 }
 
+/** Cache: sessionId → absolute transcript path (populated on first hit; never caches misses). */
+const transcriptCache = new Map<string, string>();
+
 /** Locate the transcript JSONL for a session by scanning project dirs for <sessionId>.jsonl. */
 function findTranscript(sessionId: string): string | undefined {
+  const cached = transcriptCache.get(sessionId);
+  if (cached && fs.existsSync(cached)) {
+    return cached;
+  }
   let projectDirs: string[];
   try {
     projectDirs = fs.readdirSync(PROJECTS_DIR);
@@ -53,6 +60,7 @@ function findTranscript(sessionId: string): string | undefined {
   for (const dir of projectDirs) {
     const candidate = path.join(PROJECTS_DIR, dir, `${sessionId}.jsonl`);
     if (fs.existsSync(candidate)) {
+      transcriptCache.set(sessionId, candidate);
       return candidate;
     }
   }
@@ -119,30 +127,34 @@ export function activate(context: vscode.ExtensionContext): void {
   let warnedSchema = false;
 
   const refresh = (): void => {
-    const { sessions, sawUnknownSchema } = buildSessions({
-      listSessionFiles,
-      isAlive,
-      resolveTitle: (raw: RawSessionFile) => {
-        const transcript = findTranscript(raw.sessionId);
-        const fallback = raw.name ?? path.basename(raw.cwd);
-        return transcript ? titleResolver.resolve(transcript, fallback) : fallback;
-      },
-    });
+    try {
+      const { sessions, sawUnknownSchema } = buildSessions({
+        listSessionFiles,
+        isAlive,
+        resolveTitle: (raw: RawSessionFile) => {
+          const transcript = findTranscript(raw.sessionId);
+          const fallback = raw.name ?? path.basename(raw.cwd);
+          return transcript ? titleResolver.resolve(transcript, fallback) : fallback;
+        },
+      });
 
-    tree.setSessions(sessions);
-    notifier.update(sessions);
+      tree.setSessions(sessions);
+      notifier.update(sessions);
 
-    const theme = currentTheme();
-    const sum = summarize(sessions);
-    const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
-    statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
-    statusBar.tooltip = 'Claude Semáforo — clic para ver las sesiones';
+      const theme = currentTheme();
+      const sum = summarize(sessions);
+      const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
+      statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
+      statusBar.tooltip = 'Claude Semáforo — clic para ver las sesiones';
 
-    if (sawUnknownSchema && !warnedSchema) {
-      warnedSchema = true;
-      vscode.window.showWarningMessage(
-        'Claude Semáforo: formato de sesión no reconocido — puede que Claude Code haya cambiado. Actualizá la extensión.',
-      );
+      if (sawUnknownSchema && !warnedSchema) {
+        warnedSchema = true;
+        vscode.window.showWarningMessage(
+          'Claude Semáforo: formato de sesión no reconocido — puede que Claude Code haya cambiado. Actualizá la extensión.',
+        );
+      }
+    } catch (err) {
+      console.error('Claude Semáforo refresh failed:', err);
     }
   };
 
@@ -159,6 +171,7 @@ export function activate(context: vscode.ExtensionContext): void {
   watcher.onDidCreate(onChange);
   watcher.onDidDelete(onChange);
   context.subscriptions.push(watcher);
+  context.subscriptions.push({ dispose: () => { if (debounce) { clearTimeout(debounce); } } });
 
   // Poll fallback (catches missed fs events + dead-pid cleanup).
   const intervalMs = vscode.workspace.getConfiguration('claudeSemaphore').get<number>('pollIntervalMs', 2000);
