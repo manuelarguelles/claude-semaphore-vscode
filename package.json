@@ -7,6 +7,53 @@
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
   "main": "./out/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "claudeSemaphore", "title": "Claude Semáforo", "icon": "media/icon.svg" }
+      ]
+    },
+    "views": {
+      "claudeSemaphore": [
+        { "id": "claudeSemaphore.sessions", "name": "Sesiones" }
+      ]
+    },
+    "configuration": {
+      "title": "Claude Semáforo",
+      "properties": {
+        "claudeSemaphore.theme": {
+          "type": "string",
+          "enum": ["classic", "colorblind", "highContrast"],
+          "default": "classic",
+          "description": "Paleta y formas del semáforo."
+        },
+        "claudeSemaphore.sound.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reproducir un sonido cuando una sesión pasa a amarillo (necesita atención)."
+        },
+        "claudeSemaphore.sound.file": {
+          "type": "string",
+          "default": "",
+          "description": "Ruta a un sonido personalizado. Vacío = honk incluido."
+        },
+        "claudeSemaphore.pollIntervalMs": {
+          "type": "number",
+          "default": 2000,
+          "description": "Intervalo del sondeo de respaldo (ms)."
+        }
+      }
+    },
+    "colors": [
+      { "id": "claudeSemaphore.classic.running", "description": "Running (classic)", "defaults": { "dark": "#3FB950", "light": "#1A7F37", "highContrast": "#3FB950" } },
+      { "id": "claudeSemaphore.classic.needsInput", "description": "Needs input (classic)", "defaults": { "dark": "#D29922", "light": "#9A6700", "highContrast": "#D29922" } },
+      { "id": "claudeSemaphore.classic.stopped", "description": "Stopped (classic)", "defaults": { "dark": "#F85149", "light": "#CF222E", "highContrast": "#F85149" } },
+      { "id": "claudeSemaphore.colorblind.running", "description": "Running (colorblind)", "defaults": { "dark": "#0072B2", "light": "#0072B2", "highContrast": "#0072B2" } },
+      { "id": "claudeSemaphore.colorblind.needsInput", "description": "Needs input (colorblind)", "defaults": { "dark": "#E69F00", "light": "#E69F00", "highContrast": "#E69F00" } },
+      { "id": "claudeSemaphore.colorblind.stopped", "description": "Stopped (colorblind)", "defaults": { "dark": "#D55E00", "light": "#D55E00", "highContrast": "#D55E00" } }
+    ]
+  },
   "scripts": {
     "build": "node esbuild.js",
     "watch": "node esbuild.js --watch",
