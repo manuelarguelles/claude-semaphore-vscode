@@ -106,6 +106,21 @@ refresh()  →  buildSessions()  →  [SessionState...]
 - Regresión del fix del freeze (forma depende de la causa raíz hallada).
 - Los 27 tests actuales se mantienen verdes.
 
+## Addendum (2026-06-30) — el "freeze" era una sesión sin archivo
+
+Investigación con el dev host abierto: el panel actualiza correctamente tras Reload Window
+(muestra las sesiones con archivo de estado y sus colores correctos). El síntoma reportado
+en el handoff ("una sesión nueva `busy` no aparecía como 🟢") se explica por una **sesión
+lanzada por el gateway** (OpenClaw/codex-companion): ese `claude` corre vivo pero **no
+escribe** `~/.claude/sessions/<pid>.json`, así que la extensión —lectora pura— no tiene de
+dónde leer su estado y nunca aparece. No es un freeze ni un bug del wiring de actualización.
+
+**Decisión:** dejarlo así y documentar la limitación (ver README §Limitations).
+**Task 1 se reduce** a: gatear la instrumentación `[ClaudeSemaforo]` detrás de un setting
+`claudeSemaphore.debug` (default `false`), manteniendo `console.error` para errores reales.
+Se conserva la instrumentación (no se borra) para diagnosticar un freeze real futuro con un
+solo toggle. La feature de linkeo terminal↔sesión (Tasks 2–3) sigue en pie sin cambios.
+
 ## Criterios de éxito
 1. Clic en una fila del panel enfoca el terminal correcto de esa sesión.
 2. Una sesión nueva `busy` aparece 🟢 en ≤ pollInterval sin recargar la ventana (freeze resuelto).

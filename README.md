@@ -27,6 +27,15 @@ modify your Claude Code config.
 | `claudeSemaphore.sound.enabled` | `true` | honk on yellow transition |
 | `claudeSemaphore.sound.file` | (bundled honk) | custom sound path |
 | `claudeSemaphore.pollIntervalMs` | `2000` | fallback poll interval |
+| `claudeSemaphore.debug` | `false` | emit `[ClaudeSemaforo]` diagnostic logs to the extension host console |
+
+## Limitations
+
+Only sessions that write a state file under `~/.claude/sessions/<pid>.json` are listed.
+Interactive Claude Code sessions do this; sessions launched through a gateway/bridge
+(e.g. OpenClaw / codex-companion) run in a mode that does **not** persist that file, so
+they expose no live status and will not appear in the panel. This is expected — the
+extension is a pure reader and has nothing to read for those sessions.
 
 ## Caveat
 
