@@ -42,6 +42,11 @@
           "type": "number",
           "default": 2000,
           "description": "Intervalo del sondeo de respaldo (ms)."
+        },
+        "claudeSemaphore.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Emite logs de diagnóstico [ClaudeSemaforo] en la consola del Extension Host."
         }
       }
     },

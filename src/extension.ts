@@ -99,6 +99,10 @@ function currentTheme(): ThemeName {
   return vscode.workspace.getConfiguration('claudeSemaphore').get<ThemeName>('theme', 'classic');
 }
 
+const debugEnabled = (): boolean =>
+  vscode.workspace.getConfiguration('claudeSemaphore').get<boolean>('debug', false);
+const dbg = (msg: string): void => { if (debugEnabled()) { console.log(`[ClaudeSemaforo] ${msg}`); } };
+
 export function activate(context: vscode.ExtensionContext): void {
   const tree = new SemaphoreTreeProvider();
   context.subscriptions.push(
@@ -125,8 +129,11 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   let warnedSchema = false;
+  let tickCount = 0;
 
-  const refresh = (): void => {
+  const refresh = (source: string): void => {
+    const seq = ++tickCount;
+    dbg(`refresh #${seq} (${source}) @ ${new Date().toISOString()}`);
     try {
       const { sessions, sawUnknownSchema } = buildSessions({
         listSessionFiles,
@@ -146,6 +153,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
       statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
       statusBar.tooltip = 'Claude Semáforo — clic para ver las sesiones';
+      dbg(`refresh #${seq} ok: files=${sessions.length} summary=${JSON.stringify(sum)}`);
 
       if (sawUnknownSchema && !warnedSchema) {
         warnedSchema = true;
@@ -154,38 +162,43 @@ export function activate(context: vscode.ExtensionContext): void {
         );
       }
     } catch (err) {
-      console.error('Claude Semáforo refresh failed:', err);
+      console.error(`[ClaudeSemaforo] refresh #${seq} FAILED:`, err);
     }
   };
 
   // Event-driven updates via watcher.
+  dbg(`watching dir: ${SESSIONS_DIR}`);
   const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(vscode.Uri.file(SESSIONS_DIR), '*.json'),
   );
   let debounce: NodeJS.Timeout | undefined;
-  const onChange = (): void => {
+  const onChange = (evt: string): void => {
+    dbg(`watcher event: ${evt}`);
     if (debounce) { clearTimeout(debounce); }
-    debounce = setTimeout(refresh, 150);
+    debounce = setTimeout(() => refresh('watcher'), 150);
   };
-  watcher.onDidChange(onChange);
-  watcher.onDidCreate(onChange);
-  watcher.onDidDelete(onChange);
+  watcher.onDidChange(() => onChange('change'));
+  watcher.onDidCreate(() => onChange('create'));
+  watcher.onDidDelete(() => onChange('delete'));
   context.subscriptions.push(watcher);
   context.subscriptions.push({ dispose: () => { if (debounce) { clearTimeout(debounce); } } });
 
   // Poll fallback (catches missed fs events + dead-pid cleanup).
   const intervalMs = vscode.workspace.getConfiguration('claudeSemaphore').get<number>('pollIntervalMs', 2000);
-  const timer = setInterval(refresh, Math.max(500, intervalMs));
+  const pollMs = Math.max(500, intervalMs);
+  dbg(`poll armed every ${pollMs}ms`);
+  const timer = setInterval(() => refresh('poll'), pollMs);
   context.subscriptions.push({ dispose: () => clearInterval(timer) });
 
   // Repaint when the theme setting changes.
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('claudeSemaphore')) { refresh(); }
+      if (e.affectsConfiguration('claudeSemaphore')) { refresh('config'); }
     }),
   );
 
-  refresh();
+  dbg('activated');
+  refresh('activate');
 }
 
 export function deactivate(): void {
