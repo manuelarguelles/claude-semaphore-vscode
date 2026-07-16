@@ -46,6 +46,26 @@ describe('buildSessions', () => {
     expect(sawUnknownSchema).toBe(true);
   });
 
+  it('includes daemon-backed sessions (kind "bg", e.g. forks)', () => {
+    const fork = { ...base, kind: 'bg', sessionId: 's2', pid: 2, name: 'Forked' };
+    const { sessions } = buildSessions(deps([{ path: 'a', raw: fork }], [2]));
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].title).toBe('Forked');
+  });
+
+  it('flags sessions that share a title so the UI can disambiguate', () => {
+    const f = [
+      { path: 'a', raw: { ...base, sessionId: 's1', pid: 1, name: 'Same title' } },
+      { path: 'b', raw: { ...base, sessionId: 's2', pid: 2, name: 'Same title' } },
+      { path: 'c', raw: { ...base, sessionId: 's3', pid: 3, name: 'Unique' } },
+    ];
+    const { sessions } = buildSessions(deps(f, [1, 2, 3]));
+    const byPid = new Map(sessions.map((s) => [s.pid, s]));
+    expect(byPid.get(1)?.duplicateTitle).toBe(true);
+    expect(byPid.get(2)?.duplicateTitle).toBe(true);
+    expect(byPid.get(3)?.duplicateTitle).toBeFalsy();
+  });
+
   it('sorts sessions by title', () => {
     const f = [
       { path: 'a', raw: { ...base, sessionId: 's2', name: 'Zebra', pid: 2 } },

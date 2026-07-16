@@ -90,8 +90,10 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
   getTreeItem(s: SessionState): vscode.TreeItem {
     const theme = currentTheme();
     const style = styleFor(theme, s.state);
-    const label = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido' }[s.state];
+    const stateLabel = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido' }[s.state];
+    const label = s.duplicateTitle ? `${stateLabel} · pid ${s.pid}` : stateLabel;
     const item = new vscode.TreeItem(s.title, vscode.TreeItemCollapsibleState.None);
+    item.id = `pid:${s.pid}`;
     item.description = label;
     item.tooltip = `${s.title}\n${s.cwd}\n${label}`;
     item.iconPath = style.colorId

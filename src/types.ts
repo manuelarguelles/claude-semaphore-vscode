@@ -18,6 +18,8 @@ export interface SessionState {
   cwd: string;
   title: string;
   state: SemaphoreState;
+  /** True when another live session resolved to the same title (e.g. a fork). */
+  duplicateTitle?: boolean;
 }
 
 export interface Summary {

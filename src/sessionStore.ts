@@ -27,7 +27,7 @@ export function buildSessions(deps: StoreDeps): { sessions: SessionState[]; sawU
       sawUnknownSchema = true;
       continue;
     }
-    if (raw.kind && raw.kind !== 'interactive') { continue; }
+    if (raw.kind && raw.kind !== 'interactive' && raw.kind !== 'bg') { continue; }
     if (!deps.isAlive(raw.pid)) { continue; }
     sessions.push({
       sessionId: raw.sessionId,
@@ -36,6 +36,14 @@ export function buildSessions(deps: StoreDeps): { sessions: SessionState[]; sawU
       title: deps.resolveTitle(raw),
       state: mapStatus(raw.status),
     });
+  }
+
+  const titleCounts = new Map<string, number>();
+  for (const s of sessions) {
+    titleCounts.set(s.title, (titleCounts.get(s.title) ?? 0) + 1);
+  }
+  for (const s of sessions) {
+    if ((titleCounts.get(s.title) ?? 0) > 1) { s.duplicateTitle = true; }
   }
 
   sessions.sort((a, b) => a.title.localeCompare(b.title));

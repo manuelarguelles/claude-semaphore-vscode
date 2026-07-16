@@ -14,6 +14,8 @@ describe('mapStatus', () => {
     expect(mapStatus('paused')).toBe('stopped');
   });
   it('maps unknown values to stopped', () => expect(mapStatus('wat')).toBe('stopped'));
+  // Decision: a session sitting at a shell prompt counts as stopped (red).
+  it('maps shell to stopped', () => expect(mapStatus('shell')).toBe('stopped'));
 });
 
 describe('summarize', () => {

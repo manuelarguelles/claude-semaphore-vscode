@@ -37,6 +37,11 @@ Interactive Claude Code sessions do this; sessions launched through a gateway/br
 they expose no live status and will not appear in the panel. This is expected — the
 extension is a pure reader and has nothing to read for those sessions.
 
+Daemon-backed sessions (`kind: "bg"`, e.g. a forked session claimed from a background
+spare) are listed too, but they run detached from a TTY, so terminal reveal may not be
+available for them. When two live sessions resolve to the same title (typical after a
+fork), each row shows its pid to tell them apart.
+
 ## Caveat
 
 Reads undocumented internal Claude Code files; a future Claude Code release could change
