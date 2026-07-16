@@ -1,0 +1,10 @@
+src/**
+tests/**
+docs/**
+.superpowers/**
+node_modules/**
+.gitignore
+esbuild.js
+tsconfig.json
+vitest.config.ts
+**/*.map
