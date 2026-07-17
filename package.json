@@ -2,7 +2,7 @@
   "name": "claude-semaphore",
   "displayName": "Claude Semáforo",
   "description": "Traffic-light status for every live Claude Code session: green running, yellow needs input, red stopped.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",

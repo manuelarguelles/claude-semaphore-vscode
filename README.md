@@ -7,6 +7,10 @@ A VS Code extension that shows a traffic-light status for every live Claude Code
 - 🔴 **stopped** — idle, doing nothing
 
 Shows a list in the activity bar and a `🟢n 🟡n 🔴n` summary in the status bar.
+Hover an amber row to see *why* it is waiting — a permission prompt, an open dialog.
+
+Prefer it next to your files? Drag the **Sesiones** view onto the Explorer panel;
+VS Code remembers where you put it.
 
 ## How it works
 
@@ -17,7 +21,7 @@ modify your Claude Code config.
 ## Install (local .vsix)
 
 1. `npm install && npm run build && npm run package`
-2. In VS Code: Extensions → ⋯ → *Install from VSIX…* → pick `claude-semaphore-0.1.0.vsix`.
+2. In VS Code: Extensions → ⋯ → *Install from VSIX…* → pick the generated `claude-semaphore-<version>.vsix`.
 
 ## Settings
 
