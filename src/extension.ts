@@ -7,6 +7,7 @@ import { buildSessions } from './sessionStore';
 import { summarize } from './stateMapper';
 import { styleFor } from './theme';
 import { formatTooltip } from './tooltip';
+import { renderSignature } from './renderSignature';
 import { TitleResolver } from './titleResolver';
 import { Notifier } from './notifier';
 import { AfplaySoundPlayer } from './soundPlayer';
@@ -74,9 +75,16 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
   readonly onDidChangeTreeData = this.emitter.event;
   private sessions: SessionState[] = [];
   private terminals = new Map<number, vscode.Terminal>();
+  private signature = '';
 
-  setSessions(sessions: SessionState[]): void {
+  /**
+   * Repaints only when a row would look different. Firing unconditionally
+   * rebuilds every row, which dismisses a tooltip the user is trying to read.
+   */
+  setSessions(sessions: SessionState[], signature: string): void {
     this.sessions = sessions;
+    if (signature === this.signature) { return; }
+    this.signature = signature;
     this.emitter.fire();
   }
 
@@ -175,11 +183,11 @@ export function activate(context: vscode.ExtensionContext): void {
       for (const [pid, term] of next) { terminalByPid.set(pid, term); }
       linker.prune(new Set(sessions.map((s) => s.pid)));
 
+      const theme = currentTheme();
       tree.setTerminals(terminalByPid);
-      tree.setSessions(sessions);
+      tree.setSessions(sessions, renderSignature(sessions, new Set(terminalByPid.keys()), theme));
       notifier.update(sessions);
 
-      const theme = currentTheme();
       const sum = summarize(sessions);
       const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
       statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
