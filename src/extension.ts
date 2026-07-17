@@ -8,6 +8,7 @@ import { summarize } from './stateMapper';
 import { styleFor } from './theme';
 import { formatTooltip } from './tooltip';
 import { renderSignature } from './renderSignature';
+import { Poller } from './poller';
 import { TitleResolver } from './titleResolver';
 import { Notifier } from './notifier';
 import { AfplaySoundPlayer } from './soundPlayer';
@@ -223,16 +224,22 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push({ dispose: () => { if (debounce) { clearTimeout(debounce); } } });
 
   // Poll fallback (catches missed fs events + dead-pid cleanup).
-  const intervalMs = vscode.workspace.getConfiguration('claudeSemaphore').get<number>('pollIntervalMs', 2000);
-  const pollMs = Math.max(500, intervalMs);
-  dbg(`poll armed every ${pollMs}ms`);
-  const timer = setInterval(() => refresh('poll'), pollMs);
-  context.subscriptions.push({ dispose: () => clearInterval(timer) });
+  const poller = new Poller({
+    getIntervalMs: () =>
+      vscode.workspace.getConfiguration('claudeSemaphore').get<number>('pollIntervalMs', 2000),
+    setInterval: (fn, ms) => { dbg(`poll armed every ${ms}ms`); return setInterval(fn, ms); },
+    clearInterval: (h) => clearInterval(h),
+    tick: () => { void refresh('poll'); },
+  });
+  poller.start();
+  context.subscriptions.push({ dispose: () => poller.dispose() });
 
-  // Repaint when the theme setting changes.
+  // Repaint when the theme changes; rearm the poll when its interval changes.
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('claudeSemaphore')) { refresh('config'); }
+      if (!e.affectsConfiguration('claudeSemaphore')) { return; }
+      poller.reconfigure();
+      refresh('config');
     }),
   );
 
