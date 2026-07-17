@@ -74,4 +74,23 @@ describe('buildSessions', () => {
     const { sessions } = buildSessions(deps(f, [1, 2]));
     expect(sessions.map((s) => s.title)).toEqual(['Apple', 'Zebra']);
   });
+
+  it('carries waitingFor through so the UI can say why a session is amber', () => {
+    const waiting = { ...base, status: 'waiting', waitingFor: 'permission prompt' };
+    const { sessions } = buildSessions(deps([{ path: 'a', raw: waiting }], [1]));
+    expect(sessions[0].waitingFor).toBe('permission prompt');
+  });
+
+  it('leaves waitingFor undefined when the session file omits it', () => {
+    const { sessions, sawUnknownSchema } = buildSessions(deps([{ path: 'a', raw: base }], [1]));
+    expect(sessions[0].waitingFor).toBeUndefined();
+    expect(sawUnknownSchema).toBe(false);
+  });
+
+  it('ignores a non-string waitingFor rather than dropping the session', () => {
+    const bogus = { ...base, status: 'waiting', waitingFor: 42 };
+    const { sessions } = buildSessions(deps([{ path: 'a', raw: bogus }], [1]));
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].waitingFor).toBeUndefined();
+  });
 });

@@ -10,6 +10,8 @@ export interface RawSessionFile {
   name?: string;
   kind?: string;
   statusUpdatedAt?: number;
+  /** Free-form reason, e.g. "permission prompt", "dialog open", "input needed". */
+  waitingFor?: string;
 }
 
 export interface SessionState {
@@ -20,6 +22,8 @@ export interface SessionState {
   state: SemaphoreState;
   /** True when another live session resolved to the same title (e.g. a fork). */
   duplicateTitle?: boolean;
+  /** Why the session is waiting, when Claude Code reports it. */
+  waitingFor?: string;
 }
 
 export interface Summary {

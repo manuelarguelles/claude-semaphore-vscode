@@ -6,6 +6,9 @@ import { SessionState, ThemeName, RawSessionFile } from './types';
 import { buildSessions } from './sessionStore';
 import { summarize } from './stateMapper';
 import { styleFor } from './theme';
+import { formatTooltip } from './tooltip';
+import { renderSignature } from './renderSignature';
+import { Poller } from './poller';
 import { TitleResolver } from './titleResolver';
 import { Notifier } from './notifier';
 import { AfplaySoundPlayer } from './soundPlayer';
@@ -73,9 +76,16 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
   readonly onDidChangeTreeData = this.emitter.event;
   private sessions: SessionState[] = [];
   private terminals = new Map<number, vscode.Terminal>();
+  private signature = '';
 
-  setSessions(sessions: SessionState[]): void {
+  /**
+   * Repaints only when a row would look different. Firing unconditionally
+   * rebuilds every row, which dismisses a tooltip the user is trying to read.
+   */
+  setSessions(sessions: SessionState[], signature: string): void {
     this.sessions = sessions;
+    if (signature === this.signature) { return; }
+    this.signature = signature;
     this.emitter.fire();
   }
 
@@ -92,22 +102,21 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
     const style = styleFor(theme, s.state);
     const stateLabel = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido' }[s.state];
     const label = s.duplicateTitle ? `${stateLabel} · pid ${s.pid}` : stateLabel;
+    const hasTerminal = this.terminals.has(s.pid);
     const item = new vscode.TreeItem(s.title, vscode.TreeItemCollapsibleState.None);
     item.id = `pid:${s.pid}`;
     item.description = label;
-    item.tooltip = `${s.title}\n${s.cwd}\n${label}`;
+    item.tooltip = formatTooltip(s, label, hasTerminal);
     item.iconPath = style.colorId
       ? new vscode.ThemeIcon(style.icon, new vscode.ThemeColor(style.colorId))
       : new vscode.ThemeIcon(style.icon);
-    if (this.terminals.has(s.pid)) {
+    if (hasTerminal) {
       item.contextValue = 'sessionWithTerminal';
       item.command = {
         command: 'claudeSemaphore.revealTerminal',
         title: 'Revelar terminal',
         arguments: [s.pid],
       };
-    } else {
-      item.tooltip = `${s.title}\n${s.cwd}\n${label}\n(sin terminal en esta ventana)`;
     }
     return item;
   }
@@ -175,11 +184,11 @@ export function activate(context: vscode.ExtensionContext): void {
       for (const [pid, term] of next) { terminalByPid.set(pid, term); }
       linker.prune(new Set(sessions.map((s) => s.pid)));
 
+      const theme = currentTheme();
       tree.setTerminals(terminalByPid);
-      tree.setSessions(sessions);
+      tree.setSessions(sessions, renderSignature(sessions, new Set(terminalByPid.keys()), theme));
       notifier.update(sessions);
 
-      const theme = currentTheme();
       const sum = summarize(sessions);
       const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
       statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
@@ -215,16 +224,22 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push({ dispose: () => { if (debounce) { clearTimeout(debounce); } } });
 
   // Poll fallback (catches missed fs events + dead-pid cleanup).
-  const intervalMs = vscode.workspace.getConfiguration('claudeSemaphore').get<number>('pollIntervalMs', 2000);
-  const pollMs = Math.max(500, intervalMs);
-  dbg(`poll armed every ${pollMs}ms`);
-  const timer = setInterval(() => refresh('poll'), pollMs);
-  context.subscriptions.push({ dispose: () => clearInterval(timer) });
+  const poller = new Poller({
+    getIntervalMs: () =>
+      vscode.workspace.getConfiguration('claudeSemaphore').get<number>('pollIntervalMs', 2000),
+    setInterval: (fn, ms) => { dbg(`poll armed every ${ms}ms`); return setInterval(fn, ms); },
+    clearInterval: (h) => clearInterval(h),
+    tick: () => { void refresh('poll'); },
+  });
+  poller.start();
+  context.subscriptions.push({ dispose: () => poller.dispose() });
 
-  // Repaint when the theme setting changes.
+  // Repaint when the theme changes; rearm the poll when its interval changes.
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('claudeSemaphore')) { refresh('config'); }
+      if (!e.affectsConfiguration('claudeSemaphore')) { return; }
+      poller.reconfigure();
+      refresh('config');
     }),
   );
 
