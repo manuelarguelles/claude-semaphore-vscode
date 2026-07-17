@@ -6,6 +6,7 @@ import { SessionState, ThemeName, RawSessionFile } from './types';
 import { buildSessions } from './sessionStore';
 import { summarize } from './stateMapper';
 import { styleFor } from './theme';
+import { formatTooltip } from './tooltip';
 import { TitleResolver } from './titleResolver';
 import { Notifier } from './notifier';
 import { AfplaySoundPlayer } from './soundPlayer';
@@ -92,22 +93,21 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
     const style = styleFor(theme, s.state);
     const stateLabel = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido' }[s.state];
     const label = s.duplicateTitle ? `${stateLabel} · pid ${s.pid}` : stateLabel;
+    const hasTerminal = this.terminals.has(s.pid);
     const item = new vscode.TreeItem(s.title, vscode.TreeItemCollapsibleState.None);
     item.id = `pid:${s.pid}`;
     item.description = label;
-    item.tooltip = `${s.title}\n${s.cwd}\n${label}`;
+    item.tooltip = formatTooltip(s, label, hasTerminal);
     item.iconPath = style.colorId
       ? new vscode.ThemeIcon(style.icon, new vscode.ThemeColor(style.colorId))
       : new vscode.ThemeIcon(style.icon);
-    if (this.terminals.has(s.pid)) {
+    if (hasTerminal) {
       item.contextValue = 'sessionWithTerminal';
       item.command = {
         command: 'claudeSemaphore.revealTerminal',
         title: 'Revelar terminal',
         arguments: [s.pid],
       };
-    } else {
-      item.tooltip = `${s.title}\n${s.cwd}\n${label}\n(sin terminal en esta ventana)`;
     }
     return item;
   }

@@ -35,6 +35,7 @@ export function buildSessions(deps: StoreDeps): { sessions: SessionState[]; sawU
       cwd: raw.cwd,
       title: deps.resolveTitle(raw),
       state: mapStatus(raw.status),
+      waitingFor: typeof raw.waitingFor === 'string' ? raw.waitingFor : undefined,
     });
   }
 
