@@ -7,12 +7,14 @@ export interface StateStyle {
 }
 
 const ICONS: Record<SemaphoreState, string> = {
+  unknown: 'question',
   running: 'sync~spin',
   needsInput: 'warning',
   stopped: 'circle-large-filled',
 };
 
 const EMOJI: Record<SemaphoreState, string> = {
+  unknown: '⚪',
   running: '🟢',
   needsInput: '🟡',
   stopped: '🔴',
@@ -20,7 +22,7 @@ const EMOJI: Record<SemaphoreState, string> = {
 
 export function styleFor(theme: ThemeName, state: SemaphoreState): StateStyle {
   const icon = ICONS[state];
-  if (theme === 'highContrast') {
+  if (theme === 'highContrast' || state === 'unknown') {
     return { colorId: undefined, icon, summaryGlyph: `$(${icon})` };
   }
   return {

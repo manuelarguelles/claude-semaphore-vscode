@@ -11,8 +11,8 @@ export interface LinkerDeps {
 }
 
 export class TerminalLinker {
-  /** claudePid -> ppid (estable durante la vida del proceso). */
-  private ppidCache = new Map<number, number>();
+  /** Ancestor chains are scoped to the live session so prune also drops wrappers. */
+  private ancestorCache = new Map<number, number[]>();
 
   constructor(private deps: LinkerDeps) {}
 
@@ -20,31 +20,34 @@ export class TerminalLinker {
     session: { pid: number; cwd: string },
     terminals: readonly TerminalLike[],
   ): Promise<TerminalLike | undefined> {
-    let ppid = this.ppidCache.get(session.pid);
-    if (ppid === undefined) {
-      const looked = await this.deps.getParentPid(session.pid);
-      if (looked !== undefined) {
-        ppid = looked;
-        this.ppidCache.set(session.pid, looked);
+    const terminalPids = await Promise.all(terminals.map(t => t.processId));
+    const ancestors = this.ancestorCache.get(session.pid) ?? [];
+    const seen = new Set([session.pid]);
+    let current = session.pid;
+    for (let depth = 0; depth < 12 && Number.isInteger(current) && current > 1; depth++) {
+      const parent = ancestors[depth] ?? await this.deps.getParentPid(current);
+      if (parent === undefined || !Number.isInteger(parent) || parent <= 1 || seen.has(parent)) {
+        break;
       }
+      ancestors[depth] = parent;
+      this.ancestorCache.set(session.pid, ancestors);
+      seen.add(parent);
+      const terminalIndex = terminalPids.indexOf(parent);
+      if (terminalIndex !== -1) { return terminals[terminalIndex]; }
+      current = parent;
     }
-    if (ppid !== undefined) {
-      for (const t of terminals) {
-        if ((await t.processId) === ppid) { return t; }
-      }
-    }
-    // Fallback: cwd.
-    for (const t of terminals) {
-      const tcwd = t.shellIntegration?.cwd?.fsPath;
-      if (tcwd && tcwd === session.cwd) { return t; }
-    }
-    return undefined;
+    // Multiple agents commonly share a cwd. Never reveal an arbitrary terminal.
+    const candidates = terminals.filter(t => {
+      const cwd = t.shellIntegration?.cwd?.fsPath;
+      return !!cwd && cwd === session.cwd;
+    });
+    return candidates.length === 1 ? candidates[0] : undefined;
   }
 
-  /** Limpia el cache de pids que ya no están en la lista de sesiones vigentes. */
+  /** Drop complete ancestor chains for sessions no longer alive. */
   prune(livePids: ReadonlySet<number>): void {
-    for (const pid of this.ppidCache.keys()) {
-      if (!livePids.has(pid)) { this.ppidCache.delete(pid); }
+    for (const pid of this.ancestorCache.keys()) {
+      if (!livePids.has(pid)) { this.ancestorCache.delete(pid); }
     }
   }
 }

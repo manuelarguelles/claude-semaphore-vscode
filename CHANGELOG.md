@@ -1,3 +1,12 @@
+# 1.0.0-rc.1
+
+- Add local Codex CLI rollout discovery and bounded incremental state reads alongside Claude.
+- Add provider labels, unique session row identities, and explicit unknown status.
+- Link terminals through process ancestors and reject ambiguous folder matches.
+- Keep Claude available when Codex discovery fails; add `claudeSemaphore.codex.enabled`.
+- Prevent overlapping refreshes and avoid updates after disposal.
+- Document best-effort status, unsupported unrecorded approvals/async questions, and release acceptance gates.
+
 # Changelog
 
 ## 0.3.0

@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { CodexReader, discoverCodexRollouts, OpenRollout } from './codexSessions';
+import { sessionKey } from './sessionIdentity';
 import { SessionState, ThemeName, RawSessionFile } from './types';
 import { buildSessions } from './sessionStore';
 import { summarize } from './stateMapper';
@@ -100,12 +102,12 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
   getTreeItem(s: SessionState): vscode.TreeItem {
     const theme = currentTheme();
     const style = styleFor(theme, s.state);
-    const stateLabel = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido' }[s.state];
+    const stateLabel = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido', unknown: 'desconocido' }[s.state];
     const label = s.duplicateTitle ? `${stateLabel} · pid ${s.pid}` : stateLabel;
     const hasTerminal = this.terminals.has(s.pid);
     const item = new vscode.TreeItem(s.title, vscode.TreeItemCollapsibleState.None);
-    item.id = `pid:${s.pid}`;
-    item.description = label;
+    item.id = sessionKey(s);
+    item.description = `${s.provider === 'codex' ? 'Codex' : 'Claude'} · ${label}`;
     item.tooltip = formatTooltip(s, label, hasTerminal);
     item.iconPath = style.colorId
       ? new vscode.ThemeIcon(style.icon, new vscode.ThemeColor(style.colorId))
@@ -158,10 +160,20 @@ export function activate(context: vscode.ExtensionContext): void {
   const linker = new TerminalLinker({ getParentPid: psParentPid });
   const terminalByPid = new Map<number, vscode.Terminal>();
 
+  const codexReader = new CodexReader();
+  let codexFiles: OpenRollout[] = [];
+  let nextDiscovery = 0;
+  let codexError = false;
+  let warnedCodex = false;
+  let refreshing = false;
+  let disposed = false;
+  context.subscriptions.push({ dispose: () => { disposed = true; } });
   let warnedSchema = false;
   let tickCount = 0;
 
   const refresh = async (source: string): Promise<void> => {
+    if (refreshing || disposed) return;
+    refreshing = true;
     const seq = ++tickCount;
     dbg(`refresh #${seq} (${source}) @ ${new Date().toISOString()}`);
     try {
@@ -175,11 +187,37 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       });
 
+      const codexEnabled = vscode.workspace.getConfiguration('claudeSemaphore').get<boolean>('codex.enabled', true);
+      if (codexEnabled && process.platform !== 'win32') {
+        if (Date.now() >= nextDiscovery) {
+          nextDiscovery = Date.now() + 10000;
+          try {
+            codexFiles = await discoverCodexRollouts();
+            codexReader.prune(codexFiles);
+            codexError = false;
+          } catch {
+            codexFiles = []; codexReader.prune([]); codexError = true;
+            if (!warnedCodex) {
+              warnedCodex = true;
+              vscode.window.showWarningMessage('Semáforo: no se pudo consultar Codex con lsof. Claude sigue disponible.');
+            }
+          }
+        }
+        const liveFiles = codexFiles.filter(f => isAlive(f.pid));
+        const codexSessions = await Promise.all(liveFiles.map(f => codexReader.read(f)));
+        sessions.push(...codexSessions.filter((s): s is SessionState => !!s));
+      } else {
+        codexFiles = []; codexReader.prune([]); nextDiscovery = 0;
+        codexError = codexEnabled && process.platform === 'win32';
+      }
+      sessions.sort((a, b) => a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b)));
+      if (disposed) return;
       const next = new Map<number, vscode.Terminal>();
       await Promise.all(sessions.map(async (s) => {
         const t = await linker.resolve({ pid: s.pid, cwd: s.cwd }, vscode.window.terminals);
         if (t) { next.set(s.pid, t as vscode.Terminal); }
       }));
+      if (disposed) return;
       terminalByPid.clear();
       for (const [pid, term] of next) { terminalByPid.set(pid, term); }
       linker.prune(new Set(sessions.map((s) => s.pid)));
@@ -192,7 +230,9 @@ export function activate(context: vscode.ExtensionContext): void {
       const sum = summarize(sessions);
       const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
       statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
-      statusBar.tooltip = 'Claude Semáforo — clic para ver las sesiones';
+      if (sum.unknown) statusBar.text += ` $(question)${sum.unknown}`;
+      if (codexError) statusBar.text += ' $(warning)';
+      statusBar.tooltip = `Claude + Codex Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}`;
       dbg(`refresh #${seq} ok: files=${sessions.length} summary=${JSON.stringify(sum)}`);
 
       if (sawUnknownSchema && !warnedSchema) {
@@ -203,7 +243,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     } catch (err) {
       console.error(`[ClaudeSemaforo] refresh #${seq} FAILED:`, err);
-    }
+    } finally { refreshing = false; }
   };
 
   // Event-driven updates via watcher.

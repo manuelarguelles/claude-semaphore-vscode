@@ -1,3 +1,4 @@
+import { sessionKey } from './sessionIdentity';
 import { SemaphoreState, SessionState } from './types';
 
 export interface SoundPlayer {
@@ -19,7 +20,7 @@ export class Notifier {
 
   update(sessions: SessionState[]): void {
     const current = new Map<string, SemaphoreState>(
-      sessions.map((s) => [s.sessionId, s.state]),
+      sessions.map((s) => [sessionKey(s), s.state]),
     );
     if (this.baselineSet) {
       for (const [id, state] of current) {

@@ -8,3 +8,8 @@ esbuild.js
 tsconfig.json
 vitest.config.ts
 **/*.map
+out/codex-smoke.cjs
+STATE.md
+ROADMAP.md
+PROJECT.md
+scripts/**

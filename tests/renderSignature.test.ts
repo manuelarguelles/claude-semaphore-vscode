@@ -50,8 +50,8 @@ describe('renderSignature', () => {
     expect(sig([s1])).not.toBe(sig([s1, s2]));
   });
 
-  it('ignores fields the row never renders', () => {
-    expect(sig([s1])).toBe(sig([{ ...s1, sessionId: 'different-id' }]));
+  it('repaints when a different session reuses the same process', () => {
+    expect(sig([s1])).not.toBe(sig([{ ...s1, sessionId: 'different-id' }]));
   });
 
   it('tells apart rows whose fields would run together', () => {

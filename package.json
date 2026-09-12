@@ -1,48 +1,82 @@
 {
   "name": "claude-semaphore",
-  "displayName": "Claude Semáforo",
-  "description": "Traffic-light status for every live Claude Code session: green running, yellow needs input, red stopped.",
-  "version": "0.3.0",
+  "displayName": "Claude + Codex Sem\u00e1foro",
+  "description": "Traffic-light status for local Claude Code and Codex CLI sessions, with safe terminal linking.",
+  "version": "1.0.0-rc.1",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",
-  "repository": { "type": "git", "url": "https://github.com/manuelarguelles/claude-semaphore-vscode.git" },
-  "bugs": { "url": "https://github.com/manuelarguelles/claude-semaphore-vscode/issues" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manuelarguelles/claude-semaphore-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/manuelarguelles/claude-semaphore-vscode/issues"
+  },
   "homepage": "https://github.com/manuelarguelles/claude-semaphore-vscode#readme",
-  "keywords": ["claude", "claude-code", "ai", "agent", "sessions", "status", "semaphore", "traffic light"],
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["AI", "Visualization", "Other"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "agent",
+    "sessions",
+    "status",
+    "semaphore",
+    "traffic light",
+    "codex"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Visualization",
+    "Other"
+  ],
   "main": "./out/extension.js",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
-        { "id": "claudeSemaphore", "title": "Claude Semáforo", "icon": "media/icon.svg" }
+        {
+          "id": "claudeSemaphore",
+          "title": "Claude + Codex Sem\u00e1foro",
+          "icon": "media/icon.svg"
+        }
       ]
     },
     "views": {
       "claudeSemaphore": [
-        { "id": "claudeSemaphore.sessions", "name": "Sesiones" }
+        {
+          "id": "claudeSemaphore.sessions",
+          "name": "Sesiones"
+        }
       ]
     },
     "configuration": {
-      "title": "Claude Semáforo",
+      "title": "Claude + Codex Sem\u00e1foro",
       "properties": {
         "claudeSemaphore.theme": {
           "type": "string",
-          "enum": ["classic", "colorblind", "highContrast"],
+          "enum": [
+            "classic",
+            "colorblind",
+            "highContrast"
+          ],
           "default": "classic",
-          "description": "Paleta y formas del semáforo."
+          "description": "Paleta y formas del sem\u00e1foro."
         },
         "claudeSemaphore.sound.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Reproducir un sonido cuando una sesión pasa a amarillo (necesita atención)."
+          "description": "Reproducir un sonido cuando una sesi\u00f3n pasa a amarillo (necesita atenci\u00f3n)."
         },
         "claudeSemaphore.sound.file": {
           "type": "string",
           "default": "",
-          "description": "Ruta a un sonido personalizado. Vacío = honk incluido."
+          "description": "Ruta a un sonido personalizado. Vac\u00edo = honk incluido."
         },
         "claudeSemaphore.pollIntervalMs": {
           "type": "number",
@@ -52,24 +86,85 @@
         "claudeSemaphore.debug": {
           "type": "boolean",
           "default": false,
-          "description": "Emite logs de diagnóstico [ClaudeSemaforo] en la consola del Extension Host."
+          "description": "Emite logs de diagn\u00f3stico [ClaudeSemaforo] en la consola del Extension Host."
+        },
+        "claudeSemaphore.codex.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show local Codex CLI sessions (macOS/Linux; requires lsof). Reads local events only; unrecorded permission prompts cannot be detected."
         }
       }
     },
     "colors": [
-      { "id": "claudeSemaphore.classic.running", "description": "Running (classic)", "defaults": { "dark": "#3FB950", "light": "#1A7F37", "highContrast": "#3FB950" } },
-      { "id": "claudeSemaphore.classic.needsInput", "description": "Needs input (classic)", "defaults": { "dark": "#D29922", "light": "#9A6700", "highContrast": "#D29922" } },
-      { "id": "claudeSemaphore.classic.stopped", "description": "Stopped (classic)", "defaults": { "dark": "#F85149", "light": "#CF222E", "highContrast": "#F85149" } },
-      { "id": "claudeSemaphore.colorblind.running", "description": "Running (colorblind)", "defaults": { "dark": "#0072B2", "light": "#0072B2", "highContrast": "#0072B2" } },
-      { "id": "claudeSemaphore.colorblind.needsInput", "description": "Needs input (colorblind)", "defaults": { "dark": "#E69F00", "light": "#E69F00", "highContrast": "#E69F00" } },
-      { "id": "claudeSemaphore.colorblind.stopped", "description": "Stopped (colorblind)", "defaults": { "dark": "#D55E00", "light": "#D55E00", "highContrast": "#D55E00" } }
+      {
+        "id": "claudeSemaphore.classic.running",
+        "description": "Running (classic)",
+        "defaults": {
+          "dark": "#3FB950",
+          "light": "#1A7F37",
+          "highContrast": "#3FB950"
+        }
+      },
+      {
+        "id": "claudeSemaphore.classic.needsInput",
+        "description": "Needs input (classic)",
+        "defaults": {
+          "dark": "#D29922",
+          "light": "#9A6700",
+          "highContrast": "#D29922"
+        }
+      },
+      {
+        "id": "claudeSemaphore.classic.stopped",
+        "description": "Stopped (classic)",
+        "defaults": {
+          "dark": "#F85149",
+          "light": "#CF222E",
+          "highContrast": "#F85149"
+        }
+      },
+      {
+        "id": "claudeSemaphore.colorblind.running",
+        "description": "Running (colorblind)",
+        "defaults": {
+          "dark": "#0072B2",
+          "light": "#0072B2",
+          "highContrast": "#0072B2"
+        }
+      },
+      {
+        "id": "claudeSemaphore.colorblind.needsInput",
+        "description": "Needs input (colorblind)",
+        "defaults": {
+          "dark": "#E69F00",
+          "light": "#E69F00",
+          "highContrast": "#E69F00"
+        }
+      },
+      {
+        "id": "claudeSemaphore.colorblind.stopped",
+        "description": "Stopped (colorblind)",
+        "defaults": {
+          "dark": "#D55E00",
+          "light": "#D55E00",
+          "highContrast": "#D55E00"
+        }
+      }
     ],
     "commands": [
-      { "command": "claudeSemaphore.revealTerminal", "title": "Revelar terminal", "category": "Claude Semáforo" }
+      {
+        "command": "claudeSemaphore.revealTerminal",
+        "title": "Revelar terminal",
+        "category": "Claude Sem\u00e1foro"
+      }
     ],
     "menus": {
       "view/item/context": [
-        { "command": "claudeSemaphore.revealTerminal", "when": "view == claudeSemaphore.sessions && viewItem == sessionWithTerminal", "group": "navigation" }
+        {
+          "command": "claudeSemaphore.revealTerminal",
+          "when": "view == claudeSemaphore.sessions && viewItem == sessionWithTerminal",
+          "group": "navigation"
+        }
       ]
     }
   },
@@ -77,7 +172,8 @@
     "build": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "test": "vitest run",
-    "package": "vsce package"
+    "package": "vsce package",
+    "smoke:codex": "node scripts/smoke-codex.cjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -1,4 +1,4 @@
-export type SemaphoreState = 'running' | 'needsInput' | 'stopped';
+export type SemaphoreState = 'running' | 'needsInput' | 'stopped' | 'unknown';
 
 export type ThemeName = 'classic' | 'colorblind' | 'highContrast';
 
@@ -15,6 +15,7 @@ export interface RawSessionFile {
 }
 
 export interface SessionState {
+  provider?: 'claude' | 'codex';
   sessionId: string;
   pid: number;
   cwd: string;
@@ -27,6 +28,7 @@ export interface SessionState {
 }
 
 export interface Summary {
+  unknown?: number;
   running: number;
   needsInput: number;
   stopped: number;

@@ -16,7 +16,8 @@ export function mapStatus(status: string): SemaphoreState {
 export function summarize(sessions: SessionState[]): Summary {
   const out: Summary = { running: 0, needsInput: 0, stopped: 0 };
   for (const s of sessions) {
-    out[s.state]++;
+    if (s.state === 'unknown') out.unknown = (out.unknown ?? 0) + 1;
+    else out[s.state]++;
   }
   return out;
 }

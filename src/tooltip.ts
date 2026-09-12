@@ -7,6 +7,11 @@ import { SessionState } from './types';
 export function formatTooltip(s: SessionState, label: string, hasTerminal: boolean): string {
   const reason = s.state === 'needsInput' && s.waitingFor ? ` — ${s.waitingFor}` : '';
   const lines = [s.title, s.cwd, `${label}${reason}`];
+  if (s.provider === 'codex') {
+    lines.push('Codex CLI · estado observado en eventos locales');
+    lines.push('Los permisos y preguntas no registrados pueden no detectarse.');
+    if (s.state === 'unknown') lines.push('No hay un evento suficiente para determinar el estado.');
+  }
   if (!hasTerminal) {
     lines.push('(sin terminal en esta ventana)');
   }

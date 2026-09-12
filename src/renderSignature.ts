@@ -22,6 +22,8 @@ export function renderSignature(
 ): string {
   const rows = sessions.map((s) =>
     [
+      s.provider ?? 'claude',
+      s.sessionId,
       s.pid,
       s.title,
       s.cwd,
