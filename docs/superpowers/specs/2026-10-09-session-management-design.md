@@ -1,6 +1,6 @@
 # Semáforo: organización, diagnóstico y gestión de sesiones
 
-Fecha: 2026-10-09. Estado: propuesta escrita para revisión de Manuel.
+Fecha: 2026-10-09. Estado: especificación aprobada por Manuel el 2026-10-09 mediante respuesta «Apruebo la especificación».
 
 ## Objetivo y autorización
 
