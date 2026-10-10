@@ -17,4 +17,8 @@ describe('literal terminal launch specifications', () => {
     }
     expect(() => buildLaunch({ provider: 'codex', action: 'start', cwd: 'relative' }, capabilities('codex'))).toThrow();
   });
+  it('opens native resume pickers only when explicitly requested', () => {
+    expect(buildLaunch({ provider: 'codex', action: 'resume', cwd: '/work', nativePicker: true }, capabilities('codex')).args).toEqual(['resume']);
+    expect(buildLaunch({ provider: 'claude', action: 'resume', cwd: '/work', nativePicker: true }, capabilities('claude')).args).toEqual(['--resume']);
+  });
 });

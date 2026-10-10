@@ -1,3 +1,13 @@
+# 1.1.0-rc.1 (local candidate)
+
+- Group sessions by project; search, combine filters, pin favorites and prioritize attention.
+- Distinguish idle/completed (gray) from explicitly observed agent errors (red).
+- Show session information and bounded local observation history, including recovery of previously observed sessions.
+- Start, resume and fork Claude/Codex through explicit integrated terminal arguments; create Git worktrees without changing existing sessions.
+- Add opt-in sanitized lifecycle hooks with a private stable receiver, preserved foreign configuration, backups and removal of exact owned commands. Codex requires normal hook trust review.
+- Keep observation free of model calls; block execution/configuration in untrusted workspaces.
+- Preserve safe per-session terminal identities even when processes are shared.
+
 # 1.0.0
 
 - Add local Codex session monitoring alongside Claude: provider labels, separate session rows, explicit unknown status, and bounded incremental reads.

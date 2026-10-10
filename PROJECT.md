@@ -1,12 +1,20 @@
 # Claude + Codex Semáforo
 
 ## Vision
-A read-only VS Code panel showing local coding-agent activity and revealing the matching terminal.
+Organize, inspect and manage local coding-agent sessions from VS Code using direct observed evidence.
+
 ## Stack
-TypeScript, VS Code, Node fs/child_process, vitest, esbuild.
+TypeScript, native VS Code TreeView/commands/terminals, Node filesystem and child_process, Vitest/esbuild. No new production dependencies.
+
 ## Constraints
-Never close/reload terminals or write agent configuration. Preserve existing Claude settings and extension ID. Codex status is best-effort with documented observability limits.
+Observe without model calls. Mutating actions are explicit user commands and require workspace trust. Never bypass agent permissions/trust, terminate existing sessions or automatically reload user windows. Hooks optional; preserve foreign configuration and keep telemetry free of conversation content.
+
 ## Scope
-Claude session files; writable main CLI Codex rollouts on macOS/Linux; explicit unknown state; safe process ancestry linking.
+Project groups, literal search/filters/favorites/attention priority; five states and local observation history; known-session recovery/native pickers; start/resume/fork; Git worktrees; optional metadata-only lifecycle hooks.
+
+## Validation
+macOS ARM native development host plus CLI/filesystem/Git fixtures. Windows/Linux runtime not verified. Candidate remains local until validation/publication gates are met; Marketplace stable 1.0.0 remains available.
+
 ## Links
 https://github.com/manuelarguelles/claude-semaphore-vscode
+https://marketplace.visualstudio.com/items?itemName=ManuelArguelles.claude-semaphore

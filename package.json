@@ -1,8 +1,8 @@
 {
   "name": "claude-semaphore",
   "displayName": "Claude + Codex Semáforo",
-  "description": "Traffic-light status for local Claude Code and Codex CLI sessions, with safe terminal linking.",
-  "version": "1.0.0",
+  "description": "Organize, inspect and manage local Claude Code and Codex sessions in VS Code, with optional lifecycle signals.",
+  "version": "1.1.0-rc.1",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -92,6 +92,21 @@
           "type": "boolean",
           "default": true,
           "description": "Show local Codex CLI sessions (macOS/Linux; requires lsof). Reads local events only; unrecorded permission prompts cannot be detected."
+        },
+        "claudeSemaphore.claude.path": {
+          "type": "string",
+          "default": "claude",
+          "description": "Ruta al ejecutable de claude. Se detecta desde PATH y ubicaciones comunes."
+        },
+        "claudeSemaphore.codex.path": {
+          "type": "string",
+          "default": "codex",
+          "description": "Ruta al ejecutable de codex. Se detecta desde PATH y ubicaciones comunes."
+        },
+        "claudeSemaphore.hooks.nodePath": {
+          "type": "string",
+          "default": "node",
+          "description": "Ejecutable Node.js 18+ para hooks locales opcionales."
         }
       }
     },
@@ -174,6 +189,95 @@
         "command": "claudeSemaphore.revealTerminal",
         "title": "Revelar terminal",
         "category": "Claude Semáforo"
+      },
+      {
+        "command": "claudeSemaphore.start",
+        "title": "Iniciar sesión",
+        "category": "Semáforo",
+        "icon": "$(add)",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeSemaphore.resume",
+        "title": "Recuperar sesión",
+        "category": "Semáforo",
+        "icon": "$(history)",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeSemaphore.fork",
+        "title": "Bifurcar sesión",
+        "category": "Semáforo",
+        "icon": "$(git-branch)",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeSemaphore.worktree",
+        "title": "Crear sesión en worktree",
+        "category": "Semáforo",
+        "icon": "$(repo-forked)",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeSemaphore.search",
+        "title": "Buscar sesiones",
+        "category": "Semáforo",
+        "icon": "$(search)"
+      },
+      {
+        "command": "claudeSemaphore.filters",
+        "title": "Filtrar sesiones",
+        "category": "Semáforo",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "claudeSemaphore.clearFilters",
+        "title": "Limpiar filtros",
+        "category": "Semáforo",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "claudeSemaphore.toggleGrouping",
+        "title": "Alternar agrupación por proyecto",
+        "category": "Semáforo",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "claudeSemaphore.favorite",
+        "title": "Alternar favorita",
+        "category": "Semáforo",
+        "icon": "$(star-empty)"
+      },
+      {
+        "command": "claudeSemaphore.details",
+        "title": "Ver información de sesión",
+        "category": "Semáforo",
+        "icon": "$(info)"
+      },
+      {
+        "command": "claudeSemaphore.history",
+        "title": "Ver historial local",
+        "category": "Semáforo",
+        "icon": "$(history)"
+      },
+      {
+        "command": "claudeSemaphore.clearHistory",
+        "title": "Limpiar historial local",
+        "category": "Semáforo",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "claudeSemaphore.configureHooks",
+        "title": "Configurar señales opcionales",
+        "category": "Semáforo",
+        "icon": "$(plug)",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeSemaphore.refresh",
+        "title": "Actualizar sesiones",
+        "category": "Semáforo",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -182,6 +286,83 @@
           "command": "claudeSemaphore.revealTerminal",
           "when": "view == claudeSemaphore.sessions && viewItem == sessionWithTerminal",
           "group": "navigation"
+        },
+        {
+          "command": "claudeSemaphore.details",
+          "when": "view == claudeSemaphore.sessions && viewItem =~ /^session/",
+          "group": "inline@1"
+        },
+        {
+          "command": "claudeSemaphore.favorite",
+          "when": "view == claudeSemaphore.sessions && viewItem =~ /^session/",
+          "group": "inline@2"
+        },
+        {
+          "command": "claudeSemaphore.resume",
+          "when": "view == claudeSemaphore.sessions && viewItem =~ /^session/",
+          "group": "1_manage"
+        },
+        {
+          "command": "claudeSemaphore.fork",
+          "when": "view == claudeSemaphore.sessions && viewItem =~ /^session/",
+          "group": "1_manage"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "claudeSemaphore.start",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "claudeSemaphore.resume",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "navigation@2"
+        },
+        {
+          "command": "claudeSemaphore.search",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "navigation@3"
+        },
+        {
+          "command": "claudeSemaphore.filters",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "navigation@4"
+        },
+        {
+          "command": "claudeSemaphore.refresh",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "navigation@5"
+        },
+        {
+          "command": "claudeSemaphore.clearFilters",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "1_filters"
+        },
+        {
+          "command": "claudeSemaphore.toggleGrouping",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "1_filters"
+        },
+        {
+          "command": "claudeSemaphore.history",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "2_history"
+        },
+        {
+          "command": "claudeSemaphore.clearHistory",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "2_history"
+        },
+        {
+          "command": "claudeSemaphore.worktree",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "3_manage"
+        },
+        {
+          "command": "claudeSemaphore.configureHooks",
+          "when": "view == claudeSemaphore.sessions",
+          "group": "3_manage"
         }
       ]
     }
@@ -200,5 +381,16 @@
     "esbuild": "^0.20.0",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "La observación está disponible; ejecución de agentes, Git y hooks requiere confianza.",
+      "restrictedConfigurations": [
+        "claudeSemaphore.claude.path",
+        "claudeSemaphore.codex.path",
+        "claudeSemaphore.hooks.nodePath"
+      ]
+    }
   }
 }

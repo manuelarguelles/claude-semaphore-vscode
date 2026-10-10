@@ -17,7 +17,7 @@ const ROW_SEP = '\u0002';
  */
 export function renderSignature(
   sessions: SessionState[],
-  terminalPids: Set<number>,
+  terminalPids: Set<string | number>,
   theme: string,
 ): string {
   const rows = sessions.map((s) =>
@@ -30,7 +30,9 @@ export function renderSignature(
       s.state,
       s.waitingFor ?? '',
       s.duplicateTitle ? 1 : 0,
-      terminalPids.has(s.pid) ? 1 : 0,
+      terminalPids.has(s.pid) || terminalPids.has(JSON.stringify([s.provider ?? 'claude', s.sessionId, s.pid])) ? 1 : 0,
+      s.evidence?.source ?? '',
+      s.evidence?.reason ?? '',
     ].join(FIELD_SEP),
   );
   return [theme, ...rows].join(ROW_SEP);

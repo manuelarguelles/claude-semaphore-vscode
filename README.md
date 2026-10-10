@@ -4,11 +4,12 @@ A VS Code extension that shows a traffic-light status for live Claude Code and l
 
 - 🟢 **running** — the last observed event indicates work is in progress
 - 🟡 **needs input** — waiting for a permission/answer (plays a honk when VS Code is unfocused)
-- 🔴 **stopped** — idle, doing nothing
+- ⚪ **idle/completed** — last observation indicates no ongoing turn
+- 🔴 **observed error** — an explicit agent error, distinct from idle
 
-- ⚪ **unknown** — Codex state cannot be determined from available events
+- ? **unknown** — available signals do not establish a state
 
-Shows a list in the activity bar and a `🟢n 🟡n 🔴n` summary in the status bar.
+Shows project groups in the activity bar and total active-session counts in the status bar. The tree shows visible/total counts when filtered.
 Each row identifies its provider, **Claude** or **Codex**.
 Hover an amber row to see *why* it is waiting — a permission prompt, an open dialog.
 
@@ -17,17 +18,42 @@ VS Code remembers where you put it.
 
 ## Release status
 
-**1.0.0** adds local Codex monitoring alongside Claude, including TUI user sessions
+**1.1.0-rc.1 is a local candidate**, adding organization, diagnostics and explicit session management. Stable **1.0.0** remains published. New native acceptance is still being completed; no new Marketplace version has been published.
+
+1.0.0 added local Codex monitoring alongside Claude, including TUI user sessions
 now recorded with `source: "vscode"`. Automated verification and local in-editor
 session visibility have passed. Existing extension ID and settings are preserved.
 Codex colors reflect recorded events; see the limitations below for permissions
 and questions that are not recorded.
 
+## Organization and session actions
+
+Use the session header to **start**, **recover**, **search**, **filter** or **refresh**. More Actions offers grouping, history, worktrees and optional signals. Search matches the name, provider and full project path. Filters combine one provider, one state and favorites. Clear Filters restores all rows. Groups with attention come first; within each group attention/errors precede working and idle sessions, with favorites ordered within each state.
+
+A row click reveals its safely matched terminal; without a terminal it opens session information. Inline star toggles a favorite; context menu offers resume/fork. Favorites use provider/session ID and survive PID changes. Idle sessions remain gray; missing or unreadable evidence is never an inferred error.
+
+Recovery lists sessions previously observed by Semáforo and offers each agent's native picker for other sessions. An active session with a terminal is revealed; otherwise recovery warns before opening a second instance. Fork uses the provider's native fork operation, never substitutes resume. Starting a terminal does not prove a session started successfully; CLI errors remain visible in that terminal.
+
+Worktrees use a **new branch from committed HEAD** and a new/empty destination. Existing branches/destinations are preserved, uncommitted changes are not copied, and existing sessions do not change directories. If the agent fails after creation, the worktree is retained. Start in worktree and fork of a session are separate operations in this candidate; combining fork with another CWD is not offered until provider behavior is established.
+
+## Information and local history
+
+Information shows provider, project, signal source, reason and observed time. History records transitions and loss of observation, not conversation content or task progress. Retention: 30 days, 1,000 sessions and 200 events per session. Offline/editor-closed time is excluded. Preferences/history use VS Code local storage and are not intentionally synchronized. Clear History removes only Semáforo metadata, never agent conversations.
+
+## Optional lifecycle signals
+
+**Configure optional signals** inspects the installed CLI, previews only Semáforo's additions and asks to apply them. Existing settings/hooks are preserved and a private backup is created. A stable receiver is stored in the extension's private storage. Retiring signals removes only exact registered commands and does not require the agent CLI still to be installed. Reinstall signals after an extension/Node upgrade to refresh the receiver/executable path.
+
+Requires Node.js 18+. Verified capability floor for Claude signals: 2.1.295; older versions keep file observation without these additions. Codex requires the installed stable `hooks` feature and the normal **`/hooks` trust review**. Configured does not mean trusted or receiving events. No permission decisions, context injection, model calls or changes to approval policy are returned by the receiver.
+
+Lifecycle events supplement file observations. Permission requests and eligible structured questions can indicate attention; later correlated activity/stop supersedes them. Subagent events are excluded. Coverage is still partial: nested/async questions, parallel prompts, tools without hooks and legacy notify-only installations are not guaranteed. Signals do not create a live row by themselves; a session still needs eligible observable session metadata.
+
+Malformed/symlinked/oversized configuration is not overwritten. Node/CLI paths can be configured below. Execution, Git and configuration are blocked in untrusted workspaces; observation stays available.
+
 ## How it works
 
 Reads the session-state files Claude Code already maintains under `~/.claude/sessions/`
-and the per-session `aiTitle` from transcripts. **No hooks are installed**; it does not
-modify your Claude Code config.
+and the per-session `aiTitle` from transcripts. Hooks are **off until explicitly configured** using the optional-signals command. Activation does not install hooks or edit agent settings.
 
 For Codex, a single asynchronous `lsof` discovery runs at most every 10 seconds.
 Only writable `rollout-*.jsonl` descriptors belonging to Codex-named processes are
@@ -60,6 +86,9 @@ Codex CLI 0.154.0 and TUI/app-server sessions from 0.160.0–0.160.1). Windows s
 | `claudeSemaphore.sound.enabled` | `true` | honk on yellow transition |
 | `claudeSemaphore.sound.file` | (bundled honk) | custom sound path |
 | `claudeSemaphore.pollIntervalMs` | `2000` | fallback poll interval |
+| `claudeSemaphore.claude.path` | `claude` | executable path or detected command |
+| `claudeSemaphore.codex.path` | `codex` | executable path or detected command |
+| `claudeSemaphore.hooks.nodePath` | `node` | Node.js 18+ executable for optional signals |
 | `claudeSemaphore.debug` | `false` | emit `[ClaudeSemaforo]` diagnostic logs to the extension host console |
 
 ## Limitations
@@ -77,7 +106,7 @@ fork), each row shows its pid to tell them apart.
 
 ### Codex state semantics and limits
 
-- `task_started` → green; `task_complete` or `turn_aborted` → red.
+- `task_started` → green; `task_complete` or `turn_aborted` → gray (idle/completed).
 - A directly recorded synchronous `request_user_input` tool call → yellow until its matching output arrives. Turn completion or interruption clears it.
 - Other tool calls indicate activity; reasoning can establish activity when the initial tail lacks the start event. Green means **observed activity**, not proof that the CLI is currently computing.
 - Permission prompts are not reliably persisted in rollout files. An unrecorded approval dialog can remain green. Questions expressed in assistant text, calls nested inside code-mode scripts, and `request_user_input_async` are **not detected**. Async requests return before the user answers, so treating their tool output as an answer would be misleading.
@@ -89,8 +118,7 @@ fork), each row shows its pid to tell them apart.
 ## Update without interrupting work
 
 Build/package now and install the VSIX when ready. If VS Code requests a window
-reload, defer it until active terminal jobs are finished. No installer, hooks,
-terminal commands, session termination, or automatic reload is performed by the extension.
+reload, defer it until active terminal jobs are finished. No installation, session termination or automatic window reload is performed on activation. Starting agents, creating worktrees and configuring hooks happen only through explicit commands.
 
 ## Development verification
 

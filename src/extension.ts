@@ -3,7 +3,10 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { CodexReader, discoverCodexRollouts, OpenRollout } from './codexSessions';
-import { sessionKey } from './sessionIdentity';
+import { sessionKey, persistentSessionKey } from './sessionIdentity';
+import { SessionTree } from './sessionTree';
+import { integrateSessions } from './sessionIntegration';
+import { readSessionEvents, resolveEventState } from './sessionEvents';
 import { stateLabels } from './sessionPresentation';
 import { SessionState, ThemeName, RawSessionFile } from './types';
 import { buildSessions } from './sessionStore';
@@ -74,57 +77,6 @@ function findTranscript(sessionId: string): string | undefined {
   return undefined;
 }
 
-class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
-  private emitter = new vscode.EventEmitter<void>();
-  readonly onDidChangeTreeData = this.emitter.event;
-  private sessions: SessionState[] = [];
-  private terminals = new Map<number, vscode.Terminal>();
-  private signature = '';
-
-  /**
-   * Repaints only when a row would look different. Firing unconditionally
-   * rebuilds every row, which dismisses a tooltip the user is trying to read.
-   */
-  setSessions(sessions: SessionState[], signature: string): void {
-    this.sessions = sessions;
-    if (signature === this.signature) { return; }
-    this.signature = signature;
-    this.emitter.fire();
-  }
-
-  setTerminals(m: Map<number, vscode.Terminal>): void {
-    this.terminals = m;
-  }
-
-  getChildren(): SessionState[] {
-    return this.sessions;
-  }
-
-  getTreeItem(s: SessionState): vscode.TreeItem {
-    const theme = currentTheme();
-    const style = styleFor(theme, s.state);
-    const stateLabel = stateLabels[s.state];
-    const label = s.duplicateTitle ? `${stateLabel} · pid ${s.pid}` : stateLabel;
-    const hasTerminal = this.terminals.has(s.pid);
-    const item = new vscode.TreeItem(s.title, vscode.TreeItemCollapsibleState.None);
-    item.id = sessionKey(s);
-    item.description = `${s.provider === 'codex' ? 'Codex' : 'Claude'} · ${label}`;
-    item.tooltip = formatTooltip(s, label, hasTerminal);
-    item.iconPath = style.colorId
-      ? new vscode.ThemeIcon(style.icon, new vscode.ThemeColor(style.colorId))
-      : new vscode.ThemeIcon(style.icon);
-    if (hasTerminal) {
-      item.contextValue = 'sessionWithTerminal';
-      item.command = {
-        command: 'claudeSemaphore.revealTerminal',
-        title: 'Revelar terminal',
-        arguments: [s.pid],
-      };
-    }
-    return item;
-  }
-}
-
 function currentTheme(): ThemeName {
   return vscode.workspace.getConfiguration('claudeSemaphore').get<ThemeName>('theme', 'classic');
 }
@@ -134,10 +86,10 @@ const debugEnabled = (): boolean =>
 const dbg = (msg: string): void => { if (debugEnabled()) { console.log(`[ClaudeSemaforo] ${msg}`); } };
 
 export function activate(context: vscode.ExtensionContext): void {
-  const tree = new SemaphoreTreeProvider();
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('claudeSemaphore.sessions', tree),
-  );
+  let treeView: vscode.TreeView<import('./sessionTree').TreeNode>;
+  const tree = new SessionTree(currentTheme, () => { if (treeView) treeView.message = tree.message; });
+  treeView = vscode.window.createTreeView('claudeSemaphore.sessions', { treeDataProvider: tree });
+  context.subscriptions.push(treeView, tree);
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   statusBar.command = 'workbench.view.extension.claudeSemaphore';
@@ -159,7 +111,8 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   const linker = new TerminalLinker({ getParentPid: psParentPid });
-  const terminalByPid = new Map<number, vscode.Terminal>();
+  const terminalBySession = new Map<string | number, vscode.Terminal>();
+  let observedSessions: SessionState[] = [];
 
   const codexReader = new CodexReader();
   let codexFiles: OpenRollout[] = [];
@@ -213,19 +166,23 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       sessions.sort((a, b) => a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b)));
       if (disposed) return;
-      const next = new Map<number, vscode.Terminal>();
+      const events = await readSessionEvents(integration.eventsDirectory);
+      for (let i = 0; i < sessions.length; i++) sessions[i] = resolveEventState(sessions[i], events.get(persistentSessionKey(sessions[i])));
+      observedSessions = sessions;
+      integration.observe();
+      const next = new Map<string | number, vscode.Terminal>();
       await Promise.all(sessions.map(async (s) => {
         const t = await linker.resolve({ pid: s.pid, cwd: s.cwd }, vscode.window.terminals);
-        if (t) { next.set(s.pid, t as vscode.Terminal); }
+        if (t) { next.set(sessionKey(s), t as vscode.Terminal); }
       }));
       if (disposed) return;
-      terminalByPid.clear();
-      for (const [pid, term] of next) { terminalByPid.set(pid, term); }
+      terminalBySession.clear();
+      for (const [pid, term] of next) { terminalBySession.set(pid, term); }
       linker.prune(new Set(sessions.map((s) => s.pid)));
 
       const theme = currentTheme();
-      tree.setTerminals(terminalByPid);
-      tree.setSessions(sessions, renderSignature(sessions, new Set(terminalByPid.keys()), theme));
+      tree.setTerminals(terminalBySession);
+      tree.setSessions(sessions, renderSignature(sessions, new Set(terminalBySession.keys()), theme));
       notifier.update(sessions);
 
       const sum = summarize(sessions);
@@ -247,6 +204,8 @@ export function activate(context: vscode.ExtensionContext): void {
       console.error(`[ClaudeSemaforo] refresh #${seq} FAILED:`, err);
     } finally { refreshing = false; }
   };
+
+  const integration = integrateSessions(context, tree, () => observedSessions, terminalBySession, () => refresh('command'));
 
   // Event-driven updates via watcher.
   dbg(`watching dir: ${SESSIONS_DIR}`);
@@ -286,8 +245,10 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('claudeSemaphore.revealTerminal', (pid: number) => {
-      const t = terminalByPid.get(pid);
+    vscode.commands.registerCommand('claudeSemaphore.revealTerminal', (row: number | SessionState) => {
+      const candidates = typeof row === 'number' ? observedSessions.filter(s => s.pid === row) : [row];
+      if (candidates.length !== 1) return;
+      const t = terminalBySession.get(sessionKey(candidates[0]));
       if (!t || t.exitStatus !== undefined) { return; }
       try { t.show(false); } catch { /* terminal vanished between lookup and show */ }
     }),
