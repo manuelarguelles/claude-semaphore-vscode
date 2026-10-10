@@ -8,10 +8,10 @@ const event = (type: string, extra = {}) => ({ type: 'event_msg', payload: { typ
 const response = (type: string, extra = {}) => ({ type: 'response_item', payload: { type, ...extra } });
 const roots: string[] = [];
 afterEach(() => { for (const p of roots.splice(0)) fs.rmSync(p, { recursive: true, force: true }); });
-function fixture(source: unknown = 'cli') {
+function fixture(source: unknown = 'cli', metadata = {}) {
  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'semaphore-test-')); roots.push(dir);
  const file = path.join(dir, 'rollout-test.jsonl');
- fs.writeFileSync(file, JSON.stringify({type:'session_meta',payload:{id:'abc',cwd:'/work/project',source}})+'\n');
+ fs.writeFileSync(file, JSON.stringify({type:'session_meta',payload:{id:'abc',cwd:'/work/project',source,...metadata}})+'\n');
  return file;
 }
 function append(file: string, row: unknown) { fs.appendFileSync(file, JSON.stringify(row)+'\n'); }
@@ -55,6 +55,22 @@ describe('Codex discovery and files', () => {
   const reader=new CodexReader();
   expect(await reader.read({pid:42,file:fixture({subagent:{thread_spawn:{}}})})).toBeUndefined();
   expect(await reader.read({pid:42,file:fixture('vscode')})).toBeUndefined();
+ });
+ it('reads user TUI sessions now marked vscode and continues tracking appended events', async () => {
+  const file=fixture('vscode',{originator:'codex-tui',thread_source:'user',cli_version:'0.160.1'});
+  append(file,event('task_started',{turn_id:'t'}));
+  const reader=new CodexReader();
+  expect(await reader.read({pid:42,file})).toMatchObject({provider:'codex',sessionId:'abc',state:'running'});
+  append(file,event('task_complete',{turn_id:'t'}));
+  expect((await reader.read({pid:42,file}))?.state).toBe('stopped');
+ });
+ it.each(['Claude Code','codex_work_desktop','unknown'])('excludes vscode originator %s', async originator => {
+  expect(await new CodexReader().read({pid:42,file:fixture('vscode',{originator,thread_source:'user'})})).toBeUndefined();
+ });
+ it('excludes TUI child threads even when source is cli or vscode', async () => {
+  for (const source of ['cli','vscode']) {
+   expect(await new CodexReader().read({pid:42,file:fixture(source,{originator:'codex-tui',thread_source:{subagent:{thread_spawn:{}}}})})).toBeUndefined();
+  }
  });
  it('handles a truncated file without carrying a stale state', async () => {
   const file=fixture();append(file,event('task_started'));const reader=new CodexReader();

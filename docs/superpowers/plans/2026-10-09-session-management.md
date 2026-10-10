@@ -104,4 +104,4 @@
 
 ## Revisión del plan
 
-Cobertura: organización/estados Task 1; historial/recuperación Task 2; señales/configuración Task 3; gestión/worktrees Task 4; experiencia completa Task 5; validación y entrega Task 6. Interfaces comparten Provider, SessionState y claves persistentes. No funcionalidades acordadas omitidas. Ejecución propuesta: nativa en esta sesión, con revisión independiente final conforme a WORKFLOW. Revisión del plan y método de ejecución pendientes de Manuel.
+Cobertura: organización/estados Task 1; historial/recuperación Task 2; señales/configuración Task 3; gestión/worktrees Task 4; experiencia completa Task 5; validación y entrega Task 6. Interfaces comparten Provider, SessionState y claves persistentes. No funcionalidades acordadas omitidas. Ejecución propuesta: nativa en esta sesión, con revisión independiente final conforme a WORKFLOW. Plan y ejecución nativa aprobados por Manuel mediante «apruebo, sigamos» el 2026-10-10.

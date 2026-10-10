@@ -17,7 +17,11 @@ VS Code remembers where you put it.
 
 ## Release status
 
-**1.0.0-rc.1** is the first Claude + Codex release candidate. Automated tests and a local read-only smoke test pass; in-editor visual acceptance and live blocking-question acceptance remain required before declaring 1.0.0 stable. Existing extension ID and settings are preserved.
+**1.0.0** adds local Codex monitoring alongside Claude, including TUI user sessions
+now recorded with `source: "vscode"`. Automated verification and local in-editor
+session visibility have passed. Existing extension ID and settings are preserved.
+Codex colors reflect recorded events; see the limitations below for permissions
+and questions that are not recorded.
 
 ## How it works
 
@@ -27,8 +31,9 @@ modify your Claude Code config.
 
 For Codex, a single asynchronous `lsof` discovery runs at most every 10 seconds.
 Only writable `rollout-*.jsonl` descriptors belonging to Codex-named processes are
-considered. The metadata must identify a main CLI session (`source: "cli"`), so
-subagent histories and gateway-originated sessions are excluded. This metadata
+considered. Metadata must identify a main user session: legacy `source: "cli"`,
+or `source: "vscode"` with `originator: "codex-tui"`. When present, `thread_source`
+must be `"user"`. Other IDE/gateway origins and subagent histories are excluded. This metadata
 identifies the session's origin, not necessarily the UI currently displaying it.
 
 Events are read asynchronously with a 1 MiB per-file budget. After the initial
@@ -39,7 +44,7 @@ remain separate rows. Terminal reveal follows up to 12 parent processes, includi
 Node wrappers. Folder fallback is allowed only when it identifies one terminal.
 
 Codex support requires **macOS or Linux with `lsof` on PATH** (tested on macOS with
-Codex CLI 0.154.0). Windows shows a warning and continues displaying Claude.
+Codex CLI 0.154.0 and TUI/app-server sessions from 0.160.0–0.160.1). Windows shows a warning and continues displaying Claude.
 
 ## Install (local .vsix)
 
@@ -99,7 +104,7 @@ npm run package
 ```
 
 Use a separate VS Code Extension Development Host (`--extensionDevelopmentPath`)
-to inspect the panel without reloading a working window. Before promoting the RC:
+to inspect the panel without reloading a working window. For further live acceptance,
 verify mixed-provider labels, terminal reveal with multiple same-folder sessions,
 unknown state, and a live synchronous input request transitioning yellow and back.
 

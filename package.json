@@ -2,7 +2,7 @@
   "name": "claude-semaphore",
   "displayName": "Claude + Codex Sem\u00e1foro",
   "description": "Traffic-light status for local Claude Code and Codex CLI sessions, with safe terminal linking.",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",

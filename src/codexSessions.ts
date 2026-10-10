@@ -70,7 +70,7 @@ export function discoverCodexRollouts(): Promise<OpenRollout[]> {
 const MAX_READ = 1024 * 1024;
 interface Cache {
   offset: number; inode: number; pending: Buffer; log: CodexLogState;
-  metadata?: { id: string; cwd: string; source: unknown };
+  metadata?: { id: string; cwd: string; source: unknown; originator: unknown; threadSource: unknown };
 }
 /** Bounded asynchronous reads: 1 MiB at bootstrap/gaps, then only appended bytes. */
 export class CodexReader {
@@ -94,10 +94,13 @@ export class CodexReader {
         const row = JSON.parse(head.subarray(0, end).toString('utf8'));
         const p = row.payload;
         if (row.type !== 'session_meta' || typeof p?.id !== 'string' || typeof p?.cwd !== 'string') return undefined;
-        c.metadata = { id: p.id, cwd: p.cwd, source: p.source };
+        c.metadata = { id: p.id, cwd: p.cwd, source: p.source, originator: p.originator, threadSource: p.thread_source };
       }
-      // Scope is interactive main CLI sessions; app-server/gateway/subagents differ.
-      if (c.metadata.source !== 'cli') return undefined;
+      // Recent TUI sessions can be owned by app-server and marked "vscode".
+      // Keep other IDE/gateway origins and explicitly non-user threads excluded.
+      const meta = c.metadata;
+      if (meta.threadSource !== undefined && meta.threadSource !== 'user') return undefined;
+      if (meta.source !== 'cli' && !(meta.source === 'vscode' && meta.originator === 'codex-tui')) return undefined;
       let start = c.offset;
       let skipFirst = false;
       if (stat.size - start > MAX_READ) {

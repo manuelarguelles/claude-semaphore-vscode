@@ -1,3 +1,15 @@
+# 1.0.0
+
+- Add local Codex session monitoring alongside Claude: provider labels, separate session rows, explicit unknown status, and bounded incremental reads.
+- Fix detection of TUI user sessions now recorded with `source: "vscode"` and `originator: "codex-tui"`; exclude other origins and subagent threads.
+- Reveal matching terminals through process ancestry and reject ambiguous folder matches.
+- Document limitations for unrecorded permission prompts and asynchronous/nested questions.
+
+# 1.0.0-rc.2
+
+- Recognize live Codex TUI user sessions recorded as `source: "vscode"`, while excluding other origins and subagent threads.
+- Add regression coverage for metadata compatibility and appended lifecycle events.
+
 # 1.0.0-rc.1
 
 - Add local Codex CLI rollout discovery and bounded incremental state reads alongside Claude.
