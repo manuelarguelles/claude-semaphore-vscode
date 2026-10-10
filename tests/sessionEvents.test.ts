@@ -34,6 +34,28 @@ describe('lifecycle evidence', () => {
     log.accept({ timestamp: '2026-10-10T12:00:00.000Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'one' } });
     expect(log.evidence).toEqual({ source: 'codex-rollout', reason: 'task_started', at: 1791633600000, turnId: 'one' });
     log.accept({ timestamp: '2026-10-10T12:00:01.000Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'irrelevant' } });
-    expect(log.evidence?.at).toBe(1791633600000);
+    expect(log.evidence?.at).toBe(1791633601000);
+    const current = { ...row, evidence: log.evidence, state: log.state };
+    expect(resolveEventState(current, { provider: 'codex', sessionId: 'abc', cwd: '/work', event: 'PermissionRequest', at: 1791633600500, turnId: 'one' }).state).toBe('running');
+    log.accept({ timestamp: '2026-10-10T12:00:02.000Z', type: 'response_item', payload: { type: 'function_call', name: 'request_user_input', call_id: 'question' } });
+    log.accept({ timestamp: '2026-10-10T12:00:03.000Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'ordinary' } });
+    expect(log.state).toBe('needsInput');
   });
+});
+
+import { readSessionEvents } from '../src/sessionEvents';
+import { promises as fs } from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { createHash } from 'crypto';
+it('reads a live session beyond 1000 historical files', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'semaphore-many-'));
+  try {
+    const hash = (id: string) => createHash('sha256').update(JSON.stringify(['codex', id])).digest('hex');
+    const ids = Array.from({ length: 1001 }, (_, i) => `session-${i}`).sort((a,b) => hash(a).localeCompare(hash(b)));
+    await Promise.all(ids.map(sessionId => fs.writeFile(path.join(dir, hash(sessionId) + '.json'), JSON.stringify({ provider: 'codex', sessionId, cwd: '/work', event: 'PermissionRequest', at: 1000 }))));
+    const live = { ...row, sessionId: ids[1000] };
+    const events = await readSessionEvents(dir, 2000, [live]);
+    expect(events.get(JSON.stringify(['codex', live.sessionId]))?.event).toBe('PermissionRequest');
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });

@@ -80,7 +80,11 @@ export function integrateSessions(context: vscode.ExtensionContext, tree: Sessio
     // Detect edits since preview rather than clobbering another program's configuration.
     let current: string | undefined; try { current = await fs.readFile(file, 'utf8'); } catch (error: any) { if (error.code !== 'ENOENT') throw error; }
     if (current !== text) throw new Error('La configuración cambió durante la revisión. Vuelve a abrir el comando.');
+    // Persist all owned commands before external writes; a crash or failed final
+    // compaction must leave enough ownership information for safe removal.
     if (installing) {
+      await queue;
+      await store.update('hookCommands', { ...registry, [provider]: [...new Set([...owned, command!])] });
       await fs.mkdir(path.dirname(receiver), { recursive: true, mode: 0o700 });
       const receiverTemp = `${receiver}.${process.pid}.tmp`;
       await fs.copyFile(sourceReceiver, receiverTemp); await fs.chmod(receiverTemp, 0o600); await fs.rename(receiverTemp, receiver);
@@ -90,7 +94,8 @@ export function integrateSessions(context: vscode.ExtensionContext, tree: Sessio
     const temporary = `${file}.semaphore-${process.pid}-${Date.now()}.tmp`;
     try { await fs.writeFile(temporary, preview, { flag: 'wx', mode: 0o600 }); await fs.rename(temporary, file); }
     finally { await fs.unlink(temporary).catch(() => {}); }
-    await update('hookCommands', { ...registry, [provider]: installing ? [command] : [] });
+    await queue;
+    await store.update('hookCommands', { ...registry, [provider]: installing ? [command] : [] });
     await vscode.window.showInformationMessage(`Semáforo: configuración aplicada. ${provider === 'codex' ? 'Revisa y confía en /hooks en Codex; configurar no implica que las señales estén activas.' : 'Comprueba los hooks en Claude antes de iniciar una nueva sesión.'}`);
   };
   tree.setView(view, favorites);

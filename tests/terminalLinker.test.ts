@@ -8,6 +8,12 @@ const term = (pid: number | undefined, cwd?: string): TerminalLike => ({
 });
 
 describe('TerminalLinker.resolve', () => {
+  it('matches a directly launched agent before an unrelated cwd terminal', async () => {
+    const linker = new TerminalLinker({ getParentPid: async () => undefined });
+    const direct = term(999);
+    expect(await linker.resolve({ pid: 999, cwd: '/shared' }, [term(777, '/shared'), direct])).toBe(direct);
+    expect(await linker.resolve({ pid: 999, cwd: '/shared' }, [direct])).toBe(direct);
+  });
   it('matches by process tree: claude ppid === terminal processId', async () => {
     const linker = new TerminalLinker({ getParentPid: async () => 100 });
     const shell = term(100);
@@ -49,11 +55,11 @@ describe('TerminalLinker.resolve', () => {
     expect(await linker.resolve({ pid: 999, cwd: '/shared' }, [term(100, '/shared'), term(200, '/shared')])).toBeUndefined();
   });
 
-  it('does not match the session itself when the process tree cycles', async () => {
+  it('stops when the process tree cycles', async () => {
     const parents = new Map([[999, 500], [500, 999]]);
     const visited: number[] = [];
     const linker = new TerminalLinker({ getParentPid: async pid => { visited.push(pid); return parents.get(pid); } });
-    expect(await linker.resolve({ pid: 999, cwd: '/x' }, [term(999)])).toBeUndefined();
+    expect(await linker.resolve({ pid: 999, cwd: '/x' }, [term(777)])).toBeUndefined();
     expect(visited).toEqual([999, 500]);
   });
 

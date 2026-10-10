@@ -166,7 +166,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       sessions.sort((a, b) => a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b)));
       if (disposed) return;
-      const events = await readSessionEvents(integration.eventsDirectory);
+      const events = await readSessionEvents(integration.eventsDirectory, Date.now(), sessions);
       for (let i = 0; i < sessions.length; i++) sessions[i] = resolveEventState(sessions[i], events.get(persistentSessionKey(sessions[i])));
       observedSessions = sessions;
       integration.observe();

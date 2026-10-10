@@ -41,3 +41,15 @@ describe('local session journal', () => {
     now += 31 * 86400000; journal.observe([]); expect(journal.recent()).toEqual([]);
   });
 });
+
+it('closes inconsistent inactive records at the saved heartbeat', () => {
+  let now = 1000; const journal = new SessionJournal(null, () => now);
+  journal.observe(session ? [session] : []); now = 2000; journal.observe([session]);
+  for (const active of [false, 'corrupt']) {
+    const saved = journal.snapshot(); (saved.sessions[0] as any).active = active;
+    saved.sessions[0].events.push({ at: 3000, state: 'error', reason: 'invalid future heartbeat', source: 'monitor' });
+    now = 20000; const loaded = new SessionJournal(saved, () => now); loaded.observe([session]);
+    expect(observedDurations(loaded.recent()[0]).running).toBe(1000);
+    expect(loaded.recent()[0].events.map(e => e.at)).toEqual([1000, 2000, 20000]);
+  }
+});

@@ -8,7 +8,7 @@ const ui = vi.hoisted(() => ({
   provider: undefined as any,
   status: { text: '', tooltip: '', show: vi.fn(), dispose: vi.fn() },
   warnings: vi.fn(), discover: vi.fn(), watcherDispose: vi.fn(), registrationDispose: vi.fn(),
-  handlers: new Map<string, Function>(), input: vi.fn(), document: '', saved: new Map<string, unknown>(),
+  errors: vi.fn(), handlers: new Map<string, Function>(), input: vi.fn(), document: '', saved: new Map<string, unknown>(),
   view: { message: '', dispose: vi.fn() },
   pick: vi.fn(), information: vi.fn(), config: new Map<string, unknown>(),
 }));
@@ -34,7 +34,7 @@ vi.mock('vscode', () => {
       createStatusBarItem: () => ui.status, showWarningMessage: ui.warnings,
       onDidCloseTerminal: disposable,
       createTreeView: (_id: string, options: any) => { ui.provider = options.treeDataProvider; return ui.view; },
-      showInputBox: ui.input, showErrorMessage: vi.fn(), showTextDocument: async (doc: any) => { ui.document = doc.content; },
+      showInputBox: ui.input, showErrorMessage: ui.errors, showTextDocument: async (doc: any) => { ui.document = doc.content; },
       showQuickPick: ui.pick, showInformationMessage: ui.information,
     },
     workspace: {
@@ -77,6 +77,23 @@ beforeEach(() => {
 afterEach(() => { dispose(); vi.useRealTimers(); fs.rmSync(ui.root, { recursive: true, force: true }); });
 
 describe('extension activation integration', () => {
+  it('does not install unremovable hooks when ownership storage rejects', async () => {
+    const executable = path.join(ui.root, 'reject-fixture-claude');
+    fs.writeFileSync(executable, `#!${process.execPath}\nconsole.log(process.argv[2]==='--version'?'2.1.295':'--settings --resume --fork-session');\n`); fs.chmodSync(executable, 0o755);
+    ui.config.set('claude.path', executable); ui.config.set('hooks.nodePath', process.execPath);
+    fs.mkdirSync(path.join(ui.root, 'out'), { recursive: true }); fs.copyFileSync('scripts/session-hook.cjs', path.join(ui.root, 'out/session-hook.cjs'));
+    const file = path.join(ui.root, '.claude/settings.json'); const original = JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'foreign' }] }] } }); fs.writeFileSync(file, original);
+    ui.saved.delete('hookCommands');
+    (context as any).globalState.update = async (key: string, value: unknown) => { if (key === 'hookCommands') throw new Error('storage rejected'); ui.saved.set(key, value); };
+    activate(context as any); await vi.waitFor(() => expect(rows()).toHaveLength(1));
+    ui.pick.mockResolvedValueOnce({ provider: 'claude' }).mockResolvedValueOnce('Instalar señales de Semáforo'); ui.warnings.mockResolvedValueOnce('Aplicar');
+    await ui.handlers.get('claudeSemaphore.configureHooks')!();
+    expect(fs.readFileSync(file, 'utf8')).toBe(original);
+    expect(ui.information).not.toHaveBeenCalled(); expect(ui.errors).toHaveBeenCalled();
+    ui.pick.mockResolvedValueOnce({ provider: 'claude' }).mockResolvedValueOnce('Retirar señales de Semáforo');
+    await ui.handlers.get('claudeSemaphore.configureHooks')!();
+    expect(fs.readFileSync(file, 'utf8')).toBe(original);
+  });
   it('installs a stable private receiver and removes only owned hooks without requiring the CLI', async () => {
     const executable = path.join(ui.root, 'fixture-claude');
     fs.writeFileSync(executable, `#!${process.execPath}\nconsole.log(process.argv[2]==='--version'?'2.1.295':'--settings --resume --fork-session');\n`); fs.chmodSync(executable, 0o755);

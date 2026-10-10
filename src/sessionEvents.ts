@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import { Provider, SessionState, SemaphoreState } from './types';
 import { persistentSessionKey } from './sessionIdentity';
 const protocol = require('../scripts/hook-protocol.cjs');
@@ -19,10 +20,12 @@ export function resolveEventState(session: SessionState, event: NormalizedEvent 
     evidence: { source: `${event.provider}-hook`, reason: event.event, at: event.at, turnId: event.turnId } };
 }
 /** Bounded filesystem telemetry; ignore untrusted text and stale metadata, clean own expired artifacts. */
-export async function readSessionEvents(directory: string, now = Date.now()): Promise<Map<string, NormalizedEvent>> {
+export async function readSessionEvents(directory: string, now = Date.now(), active?: readonly SessionState[]): Promise<Map<string, NormalizedEvent>> {
   const result = new Map<string, NormalizedEvent>();
-  let names: string[]; try { names = await fs.readdir(directory); } catch { return result; }
-  for (const name of names.filter(n => /^[a-f0-9]{64}\.json$/.test(n)).slice(0, 1000)) {
+  let names: string[];
+  if (active) names = [...new Set(active.map(s => createHash('sha256').update(JSON.stringify([s.provider ?? 'claude', s.sessionId])).digest('hex') + '.json'))];
+  else { try { names = await fs.readdir(directory); } catch { return result; } }
+  for (const name of names.filter(n => /^[a-f0-9]{64}\.json$/.test(n))) {
     const file = path.join(directory, name);
     try {
       const stat = await fs.lstat(file); if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 8192) continue;

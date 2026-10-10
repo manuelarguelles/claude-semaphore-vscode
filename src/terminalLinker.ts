@@ -21,6 +21,8 @@ export class TerminalLinker {
     terminals: readonly TerminalLike[],
   ): Promise<TerminalLike | undefined> {
     const terminalPids = await Promise.all(terminals.map(t => t.processId));
+    const direct = Number.isInteger(session.pid) && session.pid > 1 ? terminalPids.indexOf(session.pid) : -1;
+    if (direct !== -1) return terminals[direct];
     const ancestors = this.ancestorCache.get(session.pid) ?? [];
     const seen = new Set([session.pid]);
     let current = session.pid;

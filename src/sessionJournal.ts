@@ -23,12 +23,12 @@ export class SessionJournal {
         || !text(r.title) || !finite(r.lastSeenAt) || r.lastSeenAt > this.now() || !Array.isArray(r.events)) continue;
       const events: StateEvent[] = [];
       for (const e of r.events.slice(-200)) {
-        if (!e || !finite(e.at) || e.at > this.now() || (events.length && e.at < events[events.length - 1].at)
+        if (!e || !finite(e.at) || e.at > r.lastSeenAt + (e.state === 'offline' ? Math.max(0, this.now() - r.lastSeenAt) : 0) || (events.length && e.at < events[events.length - 1].at)
           || !states.has(e.state) || !text(e.reason) || !text(e.source, 100)) continue;
         events.push({ at: e.at, state: e.state, reason: e.reason, source: e.source });
       }
       if (!events.length) continue;
-      if (r.active && events[events.length - 1].state !== 'offline') {
+      if (events[events.length - 1].state !== 'offline') {
         events.push({ at: r.lastSeenAt, state: 'offline', reason: 'Fin de observación anterior', source: 'monitor' });
       }
       const entry: RecordedSession = { key: persistentSessionKey(r), provider: r.provider, sessionId: r.sessionId,

@@ -37,11 +37,11 @@
 
 **Interfaces:** `Provider = 'claude' | 'codex'`; `SemaphoreState` añade `error` y mantiene `stopped` interno para inactivo. `SessionState` añade `evidence?: { source: string; reason: string; at?: number }`. `ViewOptions {query:string; provider?:Provider; state?:SemaphoreState; favoritesOnly:boolean; grouped:boolean}`. `presentSessions(sessions:SessionState[], options:ViewOptions, favorites:ReadonlySet<string>): ProjectGroup[]`, `ProjectGroup {id:string; cwd:string; sessions:SessionState[]}`. `persistentSessionKey(s:Pick<SessionState,'provider'|'sessionId'>):string` en `src/sessionIdentity.ts`.
 
-- [ ] Escribir tests RED: igualdad del basename no fusiona CWD; filtro combinado elimina grupos vacíos; espera precede a favorita inactiva; PID compartido conserva IDs; estado desconocido no se presenta como error. Ejemplo: `expect(presentSessions([a,b], options, new Set()).map(g=>g.cwd)).toEqual(['/one/app','/two/app'])`.
-- [ ] Ejecutar `npx vitest run tests/sessionPresentation.test.ts tests/stateMapper.test.ts tests/theme.test.ts tests/tooltip.test.ts tests/renderSignature.test.ts`; confirmar fallo por nuevas capacidades ausentes.
-- [ ] Implementar interfaces, orden estable y cinco estados; colores grises para inactivo y rojos solo para error; mantener temas accesibles y firma de render sin tiempo que cambia por tick.
-- [ ] Repetir tests y `npx tsc --noEmit`; corregir usos exhaustivos de tipos y resumen.
-- [ ] Commit solo archivos de esta tarea.
+- [x] Escribir tests RED: igualdad del basename no fusiona CWD; filtro combinado elimina grupos vacíos; espera precede a favorita inactiva; PID compartido conserva IDs; estado desconocido no se presenta como error. Ejemplo: `expect(presentSessions([a,b], options, new Set()).map(g=>g.cwd)).toEqual(['/one/app','/two/app'])`.
+- [x] Ejecutar `npx vitest run tests/sessionPresentation.test.ts tests/stateMapper.test.ts tests/theme.test.ts tests/tooltip.test.ts tests/renderSignature.test.ts`; confirmar fallo por nuevas capacidades ausentes.
+- [x] Implementar interfaces, orden estable y cinco estados; colores grises para inactivo y rojos solo para error; mantener temas accesibles y firma de render sin tiempo que cambia por tick.
+- [x] Repetir tests y `npx tsc --noEmit`; corregir usos exhaustivos de tipos y resumen.
+- [x] Commit solo archivos de esta tarea.
 
 ### Task 2: Journal y recuperación local
 
@@ -49,11 +49,11 @@
 
 **Interfaces:** `JournalData {version:1; sessions:RecordedSession[]}`; `RecordedSession {key:string; provider:Provider; sessionId:string; cwd:string; title:string; lastSeenAt:number; active:boolean; events:StateEvent[]}`; `StateEvent {at:number; state:SemaphoreState|'offline'; reason:string; source:string}`. `SessionJournal` constructor `(data:unknown, now:()=>number)`; methods `observe(sessions:SessionState[]):boolean`, `snapshot():JournalData`, `recent():RecordedSession[]`, `clear():void`. Tiempo observado calculado desde transiciones con corte offline; no continuidad durante cierre de la ventana.
 
-- [ ] Tests RED: dos ticks iguales dejan un evento; nuevo PID mismo proveedor/sessionId mantiene catálogo; desaparición registra offline una vez; carga corrupta devuelve catálogo vacío; purga 30 días/1.000 sesiones/200 eventos; reload no suma tiempo offline. Ejemplo: `expect(journal.snapshot().sessions[0].events).toHaveLength(1)` tras dos observaciones iguales.
-- [ ] Ejecutar `npx vitest run tests/sessionJournal.test.ts` y comprobar RED.
-- [ ] Implementar journal validado y acotado, incluyendo campos permitidos únicamente y una API para detalle del tiempo observado. Serializar mediante almacenamiento del editor en Task 5, con escrituras secuenciales y diagnóstico del fallo.
-- [ ] Ejecutar tests del journal y TypeScript; verificar que JSON no contiene contenido de conversaciones.
-- [ ] Commit task.
+- [x] Tests RED: dos ticks iguales dejan un evento; nuevo PID mismo proveedor/sessionId mantiene catálogo; desaparición registra offline una vez; carga corrupta devuelve catálogo vacío; purga 30 días/1.000 sesiones/200 eventos; reload no suma tiempo offline. Ejemplo: `expect(journal.snapshot().sessions[0].events).toHaveLength(1)` tras dos observaciones iguales.
+- [x] Ejecutar `npx vitest run tests/sessionJournal.test.ts` y comprobar RED.
+- [x] Implementar journal validado y acotado, incluyendo campos permitidos únicamente y una API para detalle del tiempo observado. Serializar mediante almacenamiento del editor en Task 5, con escrituras secuenciales y diagnóstico del fallo.
+- [x] Ejecutar tests del journal y TypeScript; verificar que JSON no contiene contenido de conversaciones.
+- [x] Commit task.
 
 ### Task 3: Hooks y resolución de evidencia
 
@@ -61,11 +61,11 @@
 
 **Interfaces:** `NormalizedEvent {provider:Provider; sessionId:string; cwd:string; event:string; at:number; turnId?:string}`. `normalizeEvent(provider:Provider, raw:unknown, now:number):NormalizedEvent|undefined`. `resolveEventState(session:SessionState, event:NormalizedEvent|undefined):SessionState`. `mergeHooks(provider:Provider, original:unknown, command:string):unknown`, `removeOwnHooks(provider:Provider, original:unknown, command:string):unknown`. Ownership matches exact generated command/receiver marker, never broad command substring. Receiver writes bounded per-session sanitized JSON atomically.
 
-- [ ] Tests RED: permiso→espera y evento posterior→trabajando; fin→inactivo; StopFailure→error; eventos viejos/subagente/turno diferente no cambian estado; tamaño limitado y traversal rechazado; merge idempotente y removal preserva hook ajeno. Ejemplo: `expect(mergeHooks(p, mergeHooks(p, original, cmd), cmd)).toEqual(mergeHooks(p, original, cmd))`.
-- [ ] Ejecutar `npx vitest run tests/sessionEvents.test.ts tests/hookConfiguration.test.ts tests/sessionHook.test.ts`; comprobar RED.
-- [ ] Implementar normalización, precedencia temporal documentada, receptor sin decisiones/stdout, timeout corto, merge y copia previa. Usar únicamente eventos compatibles según ayuda/docs y distinguir configuración de señal recibida. Instalación/retirada solo por comando explícito y workspace confiable (Task 5).
-- [ ] Tests ejecutan realmente `node scripts/session-hook.cjs` con stdin fixture y directorio temporal; verificar JSON, stdout vacío y comportamiento no bloqueante ante fallo. Ejecutar suite task y TypeScript.
-- [ ] Commit task.
+- [x] Tests RED: permiso→espera y evento posterior→trabajando; fin→inactivo; StopFailure→error; eventos viejos/subagente/turno diferente no cambian estado; tamaño limitado y traversal rechazado; merge idempotente y removal preserva hook ajeno. Ejemplo: `expect(mergeHooks(p, mergeHooks(p, original, cmd), cmd)).toEqual(mergeHooks(p, original, cmd))`.
+- [x] Ejecutar `npx vitest run tests/sessionEvents.test.ts tests/hookConfiguration.test.ts tests/sessionHook.test.ts`; comprobar RED.
+- [x] Implementar normalización, precedencia temporal documentada, receptor sin decisiones/stdout, timeout corto, merge y copia previa. Usar únicamente eventos compatibles según ayuda/docs y distinguir configuración de señal recibida. Instalación/retirada solo por comando explícito y workspace confiable (Task 5).
+- [x] Tests ejecutan realmente `node scripts/session-hook.cjs` con stdin fixture y directorio temporal; verificar JSON, stdout vacío y comportamiento no bloqueante ante fallo. Ejecutar suite task y TypeScript.
+- [x] Commit task.
 
 ### Task 4: CLI y worktrees
 
@@ -73,11 +73,11 @@
 
 **Interfaces:** `AgentCapabilities {provider:Provider; executable:string; start:boolean; resume:boolean; fork:boolean; worktree:boolean; hooks:boolean; version?:string}`. `inspectAgent(provider:Provider, executable:string):Promise<AgentCapabilities>` con caché/timeout. `LaunchRequest {provider:Provider; cwd:string; action:'start'|'resume'|'fork'; sessionId?:string}`; `LaunchSpec {executable:string; args:string[]; cwd:string}`; `buildLaunch(request:LaunchRequest, capabilities:AgentCapabilities):LaunchSpec`. `createWorktree(repo:string, branch:string, destination:string):Promise<string>`.
 
-- [ ] Tests RED: argumentos resume/fork por proveedor; falta de soporte no cae a resume; IDs/rutas literales no son comandos; CLI ausente no informa éxito; repo con espacios crea worktree real; rama/destino existentes se conservan; Git sin HEAD falla claro. Ejemplo: `expect(buildLaunch(claudeFork, cap).args).toEqual(['--resume', id, '--fork-session'])`.
-- [ ] Ejecutar `npx vitest run tests/agentCapabilities.test.ts tests/sessionLauncher.test.ts tests/worktreeManager.test.ts`; comprobar RED.
-- [ ] Implementar inspección con args separados y límites, lanzadores sin shell y Git real con `execFile`. Worktree propio desde HEAD, sin copiar cambios locales. Bifurcación en otro CWD solo si evidencia de CLI confirma la combinación; mantener worktree si lanzamiento posterior falla.
-- [ ] Tests Git en repo temporal; verificar árbol original/ramas intactos ante cancelación/fallo. Ejecutar suite task, TypeScript y build.
-- [ ] Commit task.
+- [x] Tests RED: argumentos resume/fork por proveedor; falta de soporte no cae a resume; IDs/rutas literales no son comandos; CLI ausente no informa éxito; repo con espacios crea worktree real; rama/destino existentes se conservan; Git sin HEAD falla claro. Ejemplo: `expect(buildLaunch(claudeFork, cap).args).toEqual(['--resume', id, '--fork-session'])`.
+- [x] Ejecutar `npx vitest run tests/agentCapabilities.test.ts tests/sessionLauncher.test.ts tests/worktreeManager.test.ts`; comprobar RED.
+- [x] Implementar inspección con args separados y límites, lanzadores sin shell y Git real con `execFile`. Worktree propio desde HEAD, sin copiar cambios locales. Bifurcación en otro CWD solo si evidencia de CLI confirma la combinación; mantener worktree si lanzamiento posterior falla.
+- [x] Tests Git en repo temporal; verificar árbol original/ramas intactos ante cancelación/fallo. Ejecutar suite task, TypeScript y build.
+- [x] Commit task.
 
 ### Task 5: Integración completa en VS Code
 
@@ -105,3 +105,5 @@
 ## Revisión del plan
 
 Cobertura: organización/estados Task 1; historial/recuperación Task 2; señales/configuración Task 3; gestión/worktrees Task 4; experiencia completa Task 5; validación y entrega Task 6. Interfaces comparten Provider, SessionState y claves persistentes. No funcionalidades acordadas omitidas. Ejecución propuesta: nativa en esta sesión, con revisión independiente final conforme a WORKFLOW. Plan y ejecución nativa aprobados por Manuel mediante «apruebo, sigamos» el 2026-10-10.
+
+Execution evidence: Tasks 1–4 complete; Task 5 implemented and partly verified natively; Task 6 package/review/documents prepared. Native hook/history/filter/palette/reload and final packaged-host acceptance remain open due to native pipe failure. See docs/releases/1.1.0-rc.1-validation.md.

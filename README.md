@@ -97,7 +97,7 @@ For **Claude**, only sessions that write a state file under `~/.claude/sessions/
 Interactive Claude Code sessions do this; sessions launched through a gateway/bridge
 (e.g. OpenClaw / codex-companion) run in a mode that does **not** persist that file, so
 they expose no live status and will not appear in the panel. This is expected — the
-extension is a pure reader and has nothing to read for those sessions.
+live catalog requires these state files; optional hooks complement existing rows rather than inventing gateway sessions.
 
 Daemon-backed sessions (`kind: "bg"`, e.g. a forked session claimed from a background
 spare) are listed too, but they run detached from a TTY, so terminal reveal may not be

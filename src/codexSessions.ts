@@ -35,7 +35,9 @@ export class CodexLogState {
         this.state = this.questions.size ? 'needsInput' : 'running';
         this.mark(p.type, r.timestamp);
       } else if (['function_call_output', 'custom_tool_call_output'].includes(p.type)) {
-        if (this.questions.delete(p.call_id)) { this.state = this.questions.size ? 'needsInput' : 'running'; this.mark(p.type, r.timestamp); }
+        this.questions.delete(p.call_id);
+        this.state = this.questions.size ? 'needsInput' : 'running';
+        this.mark(p.type, r.timestamp);
       } else if (p.type === 'reasoning' && this.state === 'unknown') {
         this.state = 'running';
         this.mark(p.type, r.timestamp);
