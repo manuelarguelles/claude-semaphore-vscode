@@ -1,46 +1,34 @@
-# State — 2026-10-07
+# Estado de Semáforo — cierre 2026-10-10
 
-## Current phase
-Claude + Codex 1.0.0 PUBLICADA en Marketplace; Microsoft validation completed. User confirmed the installed rc.2 works in-editor on 2026-10-07.
+## Estado actual
 
-## Diagnosis and fix
-Installed rc.1 required `session_meta.payload.source === "cli"`. Four of five writable live rollouts now identify as `source: "vscode"`, `originator: "codex-tui"`, `thread_source: "user"` (0.160.0–0.160.1), owned by an app-server daemon. The reader discarded them before reading events.
-The reader accepts that exact additional source/originator pair and rejects explicit non-user thread sources. Legacy CLI metadata remains supported. Other IDE/gateway origins remain excluded.
+✅ Estable 1.0.0 publicada previamente en Marketplace `ManuelArguelles.claude-semaphore`; checkpoint fuente/VSIX conservado en `/Users/macdenix/clawd/archive/2026-10/semaphore-1.0.0-checkpoint/`.
 
-## Validation
-- Regression tests first failed on excluded TUI sessions and accepted child threads, then passed after the fix.
-- 86 tests passed in 12 suites; TypeScript noEmit and esbuild passed.
-- Live read-only smoke: before 1/5 sessions, after 5/5. Counts and states are transient.
-- Vite CJS deprecation warning is pre-existing.
+🟡 Candidato local 1.1.0-rc.1: todas las capacidades aprobadas implementadas, revisión independiente resuelta; aceptación visual parcial, objetivo aún abierto. Rama `feat/session-management`, worktree `/Users/macdenix/clawd/worktrees/semaphore-management`. Diseño y plan aprobados: no pedirlos otra vez.
 
-## Constraints and limitations
-No agent configuration, transcript or running session was modified. No window reload was performed. Colors remain best-effort observations; unrecorded permissions and nested/async questions remain unsupported. Terminal reveal may be unavailable for daemon-backed sessions.
+✅ Gates repetidos al empaquetar sesión: 129 pruebas / 22 suites, `npx tsc --noEmit`, `npm run build`; runtime del VSIX coincide con salida reconstruida. Fuente actual: f9f8fcc (antes del commit de este cierre). Seis Important corregidos RED→GREEN en 42d39f8; revisión inicial sobre 4bb0b79..6998937, sin Critical ni minors.
 
-## Release — 2026-10-07
-- User confirmed rc.2 works and explicitly requested Marketplace update.
-- Promoted identical runtime to 1.0.0; refreshed README/changelog. 86 tests, TypeScript, build and VSIX checks passed again.
-- Uploaded `claude-semaphore-1.0.0.vsix` through existing publisher ManuelArguelles; panel now shows 1.0.0 Public without Verifying (approximately 5 minutes after upload).
-- Real unrecorded approval detection remains outside scope; synchronous-question visual acceptance remains untested.
+✅ Receptor del paquete ejecutado, Git real, smoke Codex real y parte de los flujos en host nativo. Detalle exacto en `docs/releases/1.1.0-rc.1-validation.md` y matriz de aceptación. Windows/Linux no ejecutados.
 
-## Next action
-Marketplace management confirms 1.0.0 Public. Repository changes remain on feat/codex-sessions; no GitHub integration performed.
+## Pendientes vivos
 
-## Session management goal — 2026-10-09
-Manuel approved all proposed organization, diagnostics and management capabilities and explicitly requested a goal to finish and validate them. Implementation not yet started. Architectural design written in `docs/superpowers/specs/2026-10-09-session-management-design.md` and explicitly approved by Manuel. Implementation plan `docs/superpowers/plans/2026-10-09-session-management.md` committed as `500b072`; plan review and execution-method selection requested as required by writing-plans. Proposed method: native execution in this session with independent final review. After approval, execute in an isolated worktree, preserving the existing dirty 1.0.0 release changes.
+| Estado | Síntoma / reproducción | Causa o siguiente paso |
+|---|---|---|
+| 🐞 Conector externo | getApp(com.microsoft.VSCode) devuelve `Sky Computer Use native pipe startup failed` antes de observar la ventana; mismo resultado tras js_reset | Servicio presente; causa no confirmada. Restablecer conexión Computer Use del cliente. No reiniciar VS Code ni tocar protecciones para eludirlo. |
+| ⏳ Paquete final en host | Se validó fuente anterior en host, pero falta cargar el VSIX con correcciones y observar enlace a terminal | Abrir exclusivamente el host fixture `semaforo-test (Workspace)`; comprobar PID directo y resume sin duplicación. |
+| ⏳ Hooks UI | Installer/remover pasan con FS real en tests; falta completar preview/Aplicar/retirada en UI | Usar HOME y ejecutables fixture; preservar entradas ajenas. Configurar no demuestra activación real ni sustituye confianza Codex. |
+| ⏳ Historial/filtros/temas | Detalle y búsqueda 1/5 observados; falta selector historial, combinaciones/limpiar/agrupar y alternar paletas | Secuencia nativa exacta en informe de validación; cancelar no debe mutar. |
+| ⏳ Recarga/confianza | Favorita persistente y workspace no confiable cubiertos en tests, no cerrados visualmente | Recargar solo host propio; verificar tiempo offline y guardas de comandos. |
+| ⏳ Cierre | Tasks 5/6 y goal abiertos; no nueva publicación autorizada | Cerrar únicamente con evidencia de todos los pasos restantes. |
 
-Prior blocker resolved by Manuel on 2026-10-10 with «apruebo, sigamos». Prior audit: no reply yet to the pending plan review/execution-method question. No live implementation process exists to wait on; runtime remains 1.0.0. Mark goal blocked pending that user response, without marking completion. Acceptance evidence matrix is `docs/releases/session-management-acceptance.md`. Resume at plan approval, then execution; do not repeat spec approval or baseline checks without a new reason.
+El pedido original de Manu fue «dale con todas pf.; tu /goal es terminar y validar todo». No reducir ese criterio a pruebas automáticas. La instrucción `/empaquemos-sesion` cierra el hilo dejando el trabajo recuperable; no declara las capacidades completamente aceptadas.
 
-Baseline rerun: 86/86 tests, TypeScript noEmit and build passed. Installed CLI help confirms Claude 2.1.295 resume/fork/worktree and Codex 0.160.0 resume/fork/worktree; no model prompt was submitted. Current official Codex hooks documentation includes PermissionRequest and lifecycle hooks with mandatory trust review; legacy notify must not be treated as equivalent.
+## Retomar
 
-Stable rollback checkpoint: `/Users/macdenix/clawd/archive/2026-10/semaphore-1.0.0-checkpoint/checkpoint.json`, source archive and published VSIX. VSIX SHA-256 `10588a1a776de0ed06ff1ee641b6aae19f4bc4a362a9efcceafa5481830d68e4`. No new version published or installed.
+`/recuperar-proyecto claude-semaphore-vscode`
 
-## Weekly review — 2026-10-08
-User requested weekly health + Marketplace growth report, confirmed Telegram Mondays 09:00 America/Lima. OpenClaw job `3c758e02-edce-4434-8f4c-c7e2dc35b87e` enabled; next run 2026-10-12 09:00 Lima. Baseline: 63 installs, 149 downloads, 5/5 (1 rating), Marketplace 1.0.0. Durable task/schedule/baseline in docs/weekly-review/. Each run compares valid snapshots, diagnoses eligible versus detected live Claude/Codex sessions, flags schema changes, runs tests/typecheck, and delivers a concise report. No active sessions means SIN MUESTRA, not a health success. Mac/OpenClaw must be running. No automatic code fixes or releases.
+Leer primero el overview del índice, la sesión de cierre y el informe. Luego el ledger `.superpowers/sdd/2026-10-09-session-management/progress.md` del worktree. Tasks 1–4 y las seis correcciones ya terminadas no se repiten. Mantener ventanas, terminales fixture y worktrees: pueden contener un editor no guardado. Cambios sin seguimiento: `docs/releases/marketplace-1.0.0.jpg` y `docs/weekly-review/`, copiados de publicación estable y seguimiento local; conservados sin incorporar a publicación pública.
 
-## Current development — 2026-10-10
-Plan/execution approved by Manuel («apruebo, sigamos»). Worktree `/Users/macdenix/clawd/worktrees/semaphore-management`, branch feat/session-management; original dirty 1.0.0 checkout preserved. Tasks 1–4 committed; Task 5 implementation/tests complete, native acceptance partial, Task 6 packaging/review underway. 123 tests, tsc/build pass. Real Codex smoke: 10 open descriptors, 4 eligible sessions read in 14 ms (transient counts).
-Native fixture host confirmed 5 states/groups, databricks search 1/5, detail/history content, star favorite; native terminal fixture JSON proves Claude fork/resume and Codex start/worktree CWD/argv; real Git worktree created. No prompts sent to a model. CUA native pipe failed repeatedly; binding-only reset failed too. Do not restart/close user windows; remaining native acceptance must resume when control reconnects.
-Hook integration tests use actual filesystem and a controlled CLI: preserve foreign options, redact existing secrets from preview, unique backups, stable private receiver and uninstall without agent/Node. Receiver source and bundled package are separate checks; verify packaged receiver before close.
-Next: package candidate, independent source review, fix important findings with RED→GREEN, finish outstanding native acceptance and update matrix. No source push or Marketplace publication authorized for this candidate.
+## Revisión semanal existente
 
-2026-10-10 final source review: six Important findings reproduced and corrected in one RED→GREEN pass; 129 tests / 22 suites, TypeScript and build pass. Native pipe remains unavailable. Local candidate only; no completion claim or Marketplace update.
+Solicitada por Manu: Telegram, lunes 09:00 America/Lima. Job registrado anteriormente `3c758e02-edce-4434-8f4c-c7e2dc35b87e`; baseline 63 instalaciones / 149 descargas. Ver `docs/weekly-review/`. Estado del job no reconsultado en este cierre. Sin sesiones elegibles debe informar SIN MUESTRA. Sin correcciones ni releases automáticos.
