@@ -15,5 +15,8 @@ const opts = {
 if (watch) {
   esbuild.context(opts).then((ctx) => ctx.watch());
 } else {
-  esbuild.build(opts).catch(() => process.exit(1));
+  Promise.all([
+    esbuild.build(opts),
+    esbuild.build({ entryPoints: ['scripts/session-hook.cjs'], bundle: true, outfile: 'out/session-hook.cjs', platform: 'node', format: 'cjs', target: 'node18' }),
+  ]).catch(() => process.exit(1));
 }

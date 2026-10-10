@@ -7,6 +7,7 @@ export interface OpenRollout { pid: number; file: string }
 /** Only inspect actual top-level events, never prompt/tool-output text. */
 export class CodexLogState {
   state: SemaphoreState = 'unknown';
+  evidence: SessionState['evidence'];
   private turnId: string | undefined;
   private questions = new Set<string>();
   get waitingFor(): string | undefined {
@@ -20,9 +21,11 @@ export class CodexLogState {
     if (r.type === 'event_msg') {
       if (p.type === 'task_started') {
         this.turnId = p.turn_id; this.questions.clear(); this.state = 'running';
+        this.mark(p.type, r.timestamp);
       } else if (['task_complete', 'turn_aborted'].includes(p.type)) {
         if (this.turnId && p.turn_id && this.turnId !== p.turn_id) return;
         this.questions.clear(); this.state = 'stopped';
+        this.mark(p.type, r.timestamp);
       }
     } else if (r.type === 'response_item') {
       if (['function_call', 'custom_tool_call'].includes(p.type)) {
@@ -30,12 +33,18 @@ export class CodexLogState {
           this.questions.add(p.call_id);
         }
         this.state = this.questions.size ? 'needsInput' : 'running';
+        this.mark(p.type, r.timestamp);
       } else if (['function_call_output', 'custom_tool_call_output'].includes(p.type)) {
-        if (this.questions.delete(p.call_id)) this.state = this.questions.size ? 'needsInput' : 'running';
+        if (this.questions.delete(p.call_id)) { this.state = this.questions.size ? 'needsInput' : 'running'; this.mark(p.type, r.timestamp); }
       } else if (p.type === 'reasoning' && this.state === 'unknown') {
         this.state = 'running';
+        this.mark(p.type, r.timestamp);
       }
     }
+  }
+  private mark(reason: string, timestamp: unknown): void {
+    const at = typeof timestamp === 'string' ? Date.parse(timestamp) : undefined;
+    this.evidence = { source: 'codex-rollout', reason, at: at !== undefined && Number.isFinite(at) ? at : undefined, turnId: this.turnId };
   }
 }
 
@@ -126,7 +135,7 @@ export class CodexReader {
       return {
         provider: 'codex', sessionId: c.metadata.id, pid: open.pid, cwd: c.metadata.cwd,
         title: `${path.basename(c.metadata.cwd) || 'Codex'} · ${c.metadata.id.slice(-8)}`,
-        state: c.log.state, waitingFor: c.log.waitingFor,
+        state: c.log.state, waitingFor: c.log.waitingFor, evidence: c.log.evidence,
       };
     } catch {
       this.cache.delete(key);
