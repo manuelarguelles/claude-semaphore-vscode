@@ -1,6 +1,6 @@
 {
   "name": "claude-semaphore",
-  "displayName": "Claude + Codex Sem\u00e1foro",
+  "displayName": "Claude + Codex Semáforo",
   "description": "Traffic-light status for local Claude Code and Codex CLI sessions, with safe terminal linking.",
   "version": "1.0.0",
   "publisher": "manuelarguelles",
@@ -42,7 +42,7 @@
       "activitybar": [
         {
           "id": "claudeSemaphore",
-          "title": "Claude + Codex Sem\u00e1foro",
+          "title": "Claude + Codex Semáforo",
           "icon": "media/icon.svg"
         }
       ]
@@ -56,7 +56,7 @@
       ]
     },
     "configuration": {
-      "title": "Claude + Codex Sem\u00e1foro",
+      "title": "Claude + Codex Semáforo",
       "properties": {
         "claudeSemaphore.theme": {
           "type": "string",
@@ -66,17 +66,17 @@
             "highContrast"
           ],
           "default": "classic",
-          "description": "Paleta y formas del sem\u00e1foro."
+          "description": "Paleta y formas del semáforo."
         },
         "claudeSemaphore.sound.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Reproducir un sonido cuando una sesi\u00f3n pasa a amarillo (necesita atenci\u00f3n)."
+          "description": "Reproducir un sonido cuando una sesión pasa a amarillo (necesita atención)."
         },
         "claudeSemaphore.sound.file": {
           "type": "string",
           "default": "",
-          "description": "Ruta a un sonido personalizado. Vac\u00edo = honk incluido."
+          "description": "Ruta a un sonido personalizado. Vacío = honk incluido."
         },
         "claudeSemaphore.pollIntervalMs": {
           "type": "number",
@@ -86,7 +86,7 @@
         "claudeSemaphore.debug": {
           "type": "boolean",
           "default": false,
-          "description": "Emite logs de diagn\u00f3stico [ClaudeSemaforo] en la consola del Extension Host."
+          "description": "Emite logs de diagnóstico [ClaudeSemaforo] en la consola del Extension Host."
         },
         "claudeSemaphore.codex.enabled": {
           "type": "boolean",
@@ -116,11 +116,11 @@
       },
       {
         "id": "claudeSemaphore.classic.stopped",
-        "description": "Stopped (classic)",
+        "description": "Idle / completed (not an error)",
         "defaults": {
-          "dark": "#F85149",
-          "light": "#CF222E",
-          "highContrast": "#F85149"
+          "dark": "#8B949E",
+          "light": "#57606A",
+          "highContrast": "#FFFFFF"
         }
       },
       {
@@ -143,11 +143,29 @@
       },
       {
         "id": "claudeSemaphore.colorblind.stopped",
-        "description": "Stopped (colorblind)",
+        "description": "Idle / completed (not an error)",
         "defaults": {
-          "dark": "#D55E00",
-          "light": "#D55E00",
-          "highContrast": "#D55E00"
+          "dark": "#8B949E",
+          "light": "#57606A",
+          "highContrast": "#FFFFFF"
+        }
+      },
+      {
+        "id": "claudeSemaphore.classic.error",
+        "description": "Observed agent error",
+        "defaults": {
+          "dark": "#F85149",
+          "light": "#CF222E",
+          "highContrast": "#F85149"
+        }
+      },
+      {
+        "id": "claudeSemaphore.colorblind.error",
+        "description": "Observed agent error",
+        "defaults": {
+          "dark": "#F85149",
+          "light": "#CF222E",
+          "highContrast": "#F85149"
         }
       }
     ],
@@ -155,7 +173,7 @@
       {
         "command": "claudeSemaphore.revealTerminal",
         "title": "Revelar terminal",
-        "category": "Claude Sem\u00e1foro"
+        "category": "Claude Semáforo"
       }
     ],
     "menus": {

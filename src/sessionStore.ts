@@ -36,6 +36,7 @@ export function buildSessions(deps: StoreDeps): { sessions: SessionState[]; sawU
       title: deps.resolveTitle(raw),
       state: mapStatus(raw.status),
       waitingFor: typeof raw.waitingFor === 'string' ? raw.waitingFor : undefined,
+      evidence: { source: 'claude-session', reason: raw.status, at: typeof raw.statusUpdatedAt === 'number' ? raw.statusUpdatedAt : undefined },
     });
   }
 

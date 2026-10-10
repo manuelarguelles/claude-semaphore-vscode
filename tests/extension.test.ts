@@ -73,9 +73,9 @@ describe('extension activation integration', () => {
     activate(context as any);
     await vi.waitFor(() => expect(rows()).toHaveLength(3));
     const items = rows().map(s => ui.provider.getTreeItem(s));
-    expect(items.map(i => i.description)).toEqual(['Claude · corriendo', 'Codex · corriendo', 'Codex · detenido']);
+    expect(items.map(i => i.description)).toEqual(['Claude · trabajando', 'Codex · trabajando', 'Codex · inactivo / finalizado']);
     expect(new Set(items.map(i => i.id)).size).toBe(3);
-    expect(ui.status.text).toBe('🟢2 🟡0 🔴1');
+    expect(ui.status.text).toBe('🟢2 🟡0 ⚪1');
   });
 
   it('keeps Claude rows and warns once when Codex discovery fails', async () => {

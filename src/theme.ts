@@ -11,13 +11,15 @@ const ICONS: Record<SemaphoreState, string> = {
   running: 'sync~spin',
   needsInput: 'warning',
   stopped: 'circle-large-filled',
+  error: 'error',
 };
 
 const EMOJI: Record<SemaphoreState, string> = {
   unknown: '⚪',
   running: '🟢',
   needsInput: '🟡',
-  stopped: '🔴',
+  stopped: '⚪',
+  error: '🔴',
 };
 
 export function styleFor(theme: ThemeName, state: SemaphoreState): StateStyle {

@@ -23,7 +23,7 @@ describe('buildSessions', () => {
   it('maps live interactive sessions to SessionState', () => {
     const { sessions } = buildSessions(deps([{ path: 'a', raw: base }], [1]));
     expect(sessions).toEqual([
-      { sessionId: 's1', pid: 1, cwd: '/repo/one', title: 'One', state: 'running' },
+      { sessionId: 's1', pid: 1, cwd: '/repo/one', title: 'One', state: 'running', evidence: { source: 'claude-session', reason: 'busy', at: undefined } },
     ]);
   });
 

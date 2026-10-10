@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { CodexReader, discoverCodexRollouts, OpenRollout } from './codexSessions';
 import { sessionKey } from './sessionIdentity';
+import { stateLabels } from './sessionPresentation';
 import { SessionState, ThemeName, RawSessionFile } from './types';
 import { buildSessions } from './sessionStore';
 import { summarize } from './stateMapper';
@@ -102,7 +103,7 @@ class SemaphoreTreeProvider implements vscode.TreeDataProvider<SessionState> {
   getTreeItem(s: SessionState): vscode.TreeItem {
     const theme = currentTheme();
     const style = styleFor(theme, s.state);
-    const stateLabel = { running: 'corriendo', needsInput: 'necesita atención', stopped: 'detenido', unknown: 'desconocido' }[s.state];
+    const stateLabel = stateLabels[s.state];
     const label = s.duplicateTitle ? `${stateLabel} · pid ${s.pid}` : stateLabel;
     const hasTerminal = this.terminals.has(s.pid);
     const item = new vscode.TreeItem(s.title, vscode.TreeItemCollapsibleState.None);
@@ -231,6 +232,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const g = (state: 'running' | 'needsInput' | 'stopped') => styleFor(theme, state).summaryGlyph;
       statusBar.text = `${g('running')}${sum.running} ${g('needsInput')}${sum.needsInput} ${g('stopped')}${sum.stopped}`;
       if (sum.unknown) statusBar.text += ` $(question)${sum.unknown}`;
+      if (sum.error) statusBar.text += ` ${styleFor(theme, 'error').summaryGlyph}${sum.error}`;
       if (codexError) statusBar.text += ' $(warning)';
       statusBar.tooltip = `Claude + Codex Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}`;
       dbg(`refresh #${seq} ok: files=${sessions.length} summary=${JSON.stringify(sum)}`);

@@ -9,7 +9,7 @@ describe('styleFor', () => {
       summaryGlyph: '🟢',
     });
     expect(styleFor('classic', 'needsInput').summaryGlyph).toBe('🟡');
-    expect(styleFor('classic', 'stopped').summaryGlyph).toBe('🔴');
+    expect(styleFor('classic', 'stopped').summaryGlyph).toBe('⚪');
   });
 
   it('colorblind uses codicon glyphs and colorblind color ids', () => {

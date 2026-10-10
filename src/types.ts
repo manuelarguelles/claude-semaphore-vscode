@@ -1,4 +1,5 @@
-export type SemaphoreState = 'running' | 'needsInput' | 'stopped' | 'unknown';
+export type Provider = 'claude' | 'codex';
+export type SemaphoreState = 'running' | 'needsInput' | 'stopped' | 'error' | 'unknown';
 
 export type ThemeName = 'classic' | 'colorblind' | 'highContrast';
 
@@ -15,7 +16,7 @@ export interface RawSessionFile {
 }
 
 export interface SessionState {
-  provider?: 'claude' | 'codex';
+  provider?: Provider;
   sessionId: string;
   pid: number;
   cwd: string;
@@ -25,10 +26,12 @@ export interface SessionState {
   duplicateTitle?: boolean;
   /** Why the session is waiting, when Claude Code reports it. */
   waitingFor?: string;
+  evidence?: { source: string; reason: string; at?: number; turnId?: string };
 }
 
 export interface Summary {
   unknown?: number;
+  error?: number;
   running: number;
   needsInput: number;
   stopped: number;

@@ -13,7 +13,7 @@ describe('mapStatus', () => {
     expect(mapStatus('idle')).toBe('stopped');
     expect(mapStatus('paused')).toBe('stopped');
   });
-  it('maps unknown values to stopped', () => expect(mapStatus('wat')).toBe('stopped'));
+  it('maps unknown values to unknown', () => expect(mapStatus('wat')).toBe('unknown'));
   // Decision: a session sitting at a shell prompt counts as stopped (red).
   it('maps shell to stopped', () => expect(mapStatus('shell')).toBe('stopped'));
 });
