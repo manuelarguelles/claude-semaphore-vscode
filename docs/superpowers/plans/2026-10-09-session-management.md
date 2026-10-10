@@ -86,20 +86,20 @@
 **Interfaces:** `SessionTree` consume `presentSessions`, `SessionJournal`, preferencias y enlaces de terminal; `TreeNode = ProjectGroup | SessionState` con discriminación explícita. `registerSessionCommands(context:vscode.ExtensionContext, services:SessionServices):void`; `SessionServices` contiene getSessions, getJournal, updateView, toggleFavorite, getCapabilities, launch, configureHooks y refresh. `formatSessionDetails(session:RecordedSession):string` produce texto escapado y tiempo observado.
 
 - [ ] Tests RED de integración: grupos/lista plana, filtros visible/total, limpiar vacío, favoritas persistentes, todos los comandos registrados, acción para fila sin terminal, cancelar dialog no ejecuta nada, workspace no confiable bloquea mutaciones, fallo de escritura/CLI visible y lifecycle dispone watchers/timers.
-- [ ] Ejecutar `npx vitest run tests/extension.test.ts tests/sessionCommands.test.ts tests/sessionTree.test.ts`; comprobar RED antes de integrar.
-- [ ] Conectar todos los módulos al refresh existente, filtros y menús, journal serializado, receptor/eventos con lecturas limitadas, detalle/historial, búsqueda nativa, configuración opcional y nuevas terminales mediante shellPath/args/CWD. Summary total y vista visible separados. Evitar reentrancia y conservar notificación/enlace seguro.
+- [x] Ejecutar `npx vitest run tests/extension.test.ts tests/sessionCommands.test.ts tests/sessionTree.test.ts`; comprobar RED antes de integrar.
+- [x] Conectar todos los módulos al refresh existente, filtros y menús, journal serializado, receptor/eventos con lecturas limitadas, detalle/historial, búsqueda nativa, configuración opcional y nuevas terminales mediante shellPath/args/CWD. Summary total y vista visible separados. Evitar reentrancia y conservar notificación/enlace seguro.
 - [ ] Ejecutar tests y TypeScript. Validar argv/CWD con CLI fixture en host de desarrollo y sin inferencia; comprobar start/resume/fork/worktree, cancelación y recuperación de error; prueba real de lectores actuales.
 - [ ] Revisión visual en host aislado, default y filtrado, detalle/historial, estados y paletas. Registrar evidencia; corregir fallos antes de marcar task.
-- [ ] Commit task.
+- [x] Commit task.
 
 ### Task 6: Paquete, revisión y entrega
 
 **Files:** Modify `README.md`, `CHANGELOG.md`, `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `package.json`, `package-lock.json`; create `docs/releases/1.1.0-rc.1-validation.md`; update plan checkboxes and local recovery index session.
 
-- [ ] Redactar docs del comportamiento final, configuración reversible, confianza de hooks, almacenamiento, CLI/plataformas, coste del agente y rollback. Candidato `1.1.0-rc.1` local, conservando ID.
-- [ ] Ejecutar `npm test`, `npx tsc --noEmit`, `npm run build`, `npm run smoke:codex`, `npx vsce package`; salida esperada: suite completa correcta y paquete generado, smoke distingue muestra ausente de éxito.
-- [ ] Inspeccionar lista ZIP/VSIX: receptor incluido y ejecutable con rutas válidas, documentos privados/credenciales/snapshots excluidos; SHA-256 y matriz de validación registrados.
-- [ ] Revisión independiente de rama completa, corregir hallazgos con regresiones RED→GREEN; repetir únicamente verificaciones afectadas y suite final tras correcciones.
+- [x] Redactar docs del comportamiento final, configuración reversible, confianza de hooks, almacenamiento, CLI/plataformas, coste del agente y rollback. Candidato `1.1.0-rc.1` local, conservando ID.
+- [x] Ejecutar `npm test`, `npx tsc --noEmit`, `npm run build`, `npm run smoke:codex`, `npx vsce package`; salida esperada: suite completa correcta y paquete generado, smoke distingue muestra ausente de éxito.
+- [x] Inspeccionar lista ZIP/VSIX: receptor incluido y ejecutable con rutas válidas, documentos privados/credenciales/snapshots excluidos; SHA-256 y matriz de validación registrados.
+- [x] Revisión independiente de rama completa, corregir hallazgos con regresiones RED→GREEN; repetir únicamente verificaciones afectadas y suite final tras correcciones.
 - [ ] Documentar estado/memoria/índice y pendientes reales. Instalar/mostrar candidato en host aislado para entrega local sin cerrar ventanas del usuario. Goal completo solo si las capacidades aprobadas y verificaciones están cerradas; publicación Marketplace no forma parte de esta entrega.
 
 ## Revisión del plan
