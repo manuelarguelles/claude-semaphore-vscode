@@ -2,7 +2,7 @@
   "name": "claude-semaphore",
   "displayName": "Claude + Codex Semáforo",
   "description": "Organize, inspect and manage local Claude Code and Codex sessions in VS Code, with optional lifecycle signals.",
-  "version": "1.1.0-rc.1",
+  "version": "1.1.0",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",

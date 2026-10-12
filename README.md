@@ -18,7 +18,7 @@ VS Code remembers where you put it.
 
 ## Release status
 
-**1.1.0-rc.1 is a local candidate**, adding organization, diagnostics and explicit session management. Stable **1.0.0** remains published. New native acceptance is still being completed; no new Marketplace version has been published.
+**1.1.0** adds organization, diagnostics and explicit session management: project grouping, search and filters, favorites, local observation history, opt-in lifecycle hooks, and start/resume/fork of Claude and Codex plus Git worktrees. Native acceptance was completed on macOS; Windows and Linux have not been verified.
 
 1.0.0 added local Codex monitoring alongside Claude, including TUI user sessions
 now recorded with `source: "vscode"`. Automated verification and local in-editor

@@ -1,4 +1,4 @@
-# 1.1.0-rc.1 (local candidate)
+# 1.1.0
 
 - Group sessions by project; search, combine filters, pin favorites and prioritize attention.
 - Distinguish idle/completed (gray) from explicitly observed agent errors (red).
