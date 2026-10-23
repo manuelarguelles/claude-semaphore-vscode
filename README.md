@@ -1,6 +1,6 @@
-# Claude + Codex Semáforo
+# Claude + Codex + OpenCode Semáforo
 
-A VS Code extension that shows a traffic-light status for live Claude Code and local Codex CLI sessions.
+A VS Code extension that shows a traffic-light status for live Claude Code, local Codex CLI and OpenCode sessions.
 
 - 🟢 **running** — the last observed event indicates work is in progress
 - 🟡 **needs input** — waiting for a permission/answer (plays a honk when VS Code is unfocused)
@@ -10,7 +10,7 @@ A VS Code extension that shows a traffic-light status for live Claude Code and l
 - ? **unknown** — available signals do not establish a state
 
 Shows project groups in the activity bar and total active-session counts in the status bar. The tree shows visible/total counts when filtered.
-Each row identifies its provider, **Claude** or **Codex**.
+Each row identifies its provider, **Claude**, **Codex** or **OpenCode**.
 Hover an amber row to see *why* it is waiting — a permission prompt, an open dialog.
 
 Prefer it next to your files? Drag the **Sesiones** view onto the Explorer panel;
@@ -18,7 +18,9 @@ VS Code remembers where you put it.
 
 ## Release status
 
-**1.1.0** adds organization, diagnostics and explicit session management: project grouping, search and filters, favorites, local observation history, opt-in lifecycle hooks, and start/resume/fork of Claude and Codex plus Git worktrees. Native acceptance was completed on macOS; Windows and Linux have not been verified.
+**1.1.1** adds OpenCode as a third provider: live sessions are read from its local SQLite database without native dependencies; start/resume/fork use the installed `opencode` CLI and pending permission prompts cannot be detected (documented limitation).
+
+**1.1.0** added organization, diagnostics and explicit session management: project grouping, search and filters, favorites, local observation history, opt-in lifecycle hooks, and start/resume/fork of Claude and Codex plus Git worktrees. Native acceptance was completed on macOS; Windows and Linux have not been verified.
 
 1.0.0 added local Codex monitoring alongside Claude, including TUI user sessions
 now recorded with `source: "vscode"`. Automated verification and local in-editor
@@ -72,6 +74,15 @@ Node wrappers. Folder fallback is allowed only when it identifies one terminal.
 Codex support requires **macOS or Linux with `lsof` on PATH** (tested on macOS with
 Codex CLI 0.154.0 and TUI/app-server sessions from 0.160.0–0.160.1). Windows shows a warning and continues displaying Claude.
 
+For OpenCode, live `opencode` processes are discovered with `lsof` and `ps`; the
+session table and event tail are read through `sqlite3 -readonly` from the shared
+`~/.local/share/opencode/opencode.db` (no native dependencies). Running comes only
+from recorded `step-start` events and stopped from completed assistant messages;
+an unknown state is kept until the database proves otherwise. Sessions are
+attributed by `-s/--session` argument when present, otherwise by a recent-activity
+window for the process working directory. Pending permission prompts are not
+observable this way; the row tooltip says so explicitly.
+
 ## Install (local .vsix)
 
 1. `npm install && npm run build && npm run package`
@@ -82,12 +93,15 @@ Codex CLI 0.154.0 and TUI/app-server sessions from 0.160.0–0.160.1). Windows s
 | Setting | Default | Notes |
 |---|---|---|
 | `claudeSemaphore.codex.enabled` | `true` | show local Codex CLI sessions; no restart needed |
+| `claudeSemaphore.opencode.enabled` | `true` | show local OpenCode sessions; requires `lsof`, `ps` and `sqlite3` |
+| `claudeSemaphore.opencode.windowMs` | `10` | activity window (minutes) for cwd-shared OpenCode sessions |
 | `claudeSemaphore.theme` | `classic` | `classic` / `colorblind` / `highContrast` |
 | `claudeSemaphore.sound.enabled` | `true` | honk on yellow transition |
 | `claudeSemaphore.sound.file` | (bundled honk) | custom sound path |
 | `claudeSemaphore.pollIntervalMs` | `2000` | fallback poll interval |
 | `claudeSemaphore.claude.path` | `claude` | executable path or detected command |
 | `claudeSemaphore.codex.path` | `codex` | executable path or detected command |
+| `claudeSemaphore.opencode.path` | `opencode` | executable path or detected command |
 | `claudeSemaphore.hooks.nodePath` | `node` | Node.js 18+ executable for optional signals |
 | `claudeSemaphore.debug` | `false` | emit `[ClaudeSemaforo]` diagnostic logs to the extension host console |
 

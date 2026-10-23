@@ -1,7 +1,7 @@
 {
   "name": "claude-semaphore",
-  "displayName": "Claude + Codex Semáforo",
-  "description": "Organize, inspect and manage local Claude Code and Codex sessions in VS Code, with optional lifecycle signals.",
+  "displayName": "Claude + Codex + OpenCode Semáforo",
+  "description": "Organize, inspect and manage local Claude Code, Codex and OpenCode sessions in VS Code, with optional lifecycle signals.",
   "version": "1.1.1",
   "publisher": "manuelarguelles",
   "license": "MIT",
@@ -42,7 +42,7 @@
       "activitybar": [
         {
           "id": "claudeSemaphore",
-          "title": "Claude + Codex Semáforo",
+          "title": "Claude + Codex + OpenCode Semáforo",
           "icon": "media/icon.svg"
         }
       ]
@@ -56,7 +56,7 @@
       ]
     },
     "configuration": {
-      "title": "Claude + Codex Semáforo",
+      "title": "Claude + Codex + OpenCode Semáforo",
       "properties": {
         "claudeSemaphore.theme": {
           "type": "string",
