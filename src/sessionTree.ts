@@ -44,7 +44,7 @@ export class SessionTree implements vscode.TreeDataProvider<TreeNode>, vscode.Di
     const label = `${stateLabels[s.state]}${s.duplicateTitle ? ` · pid ${s.pid}` : ''}`;
     const terminal = this.terminals.has(sessionKey(s)) || this.terminals.has(s.pid);
     const style = styleFor(this.theme(), s.state);
-    item.id = sessionKey(s); item.description = `${s.provider === 'codex' ? 'Codex' : 'Claude'} · ${label}`;
+    item.id = sessionKey(s); item.description = `${s.provider === 'codex' ? 'Codex' : s.provider === 'opencode' ? 'OpenCode' : 'Claude'} · ${label}`;
     item.tooltip = formatTooltip(s, label, terminal);
     item.iconPath = new vscode.ThemeIcon(style.icon, style.colorId ? new vscode.ThemeColor(style.colorId) : undefined);
     item.contextValue = terminal ? 'sessionWithTerminal' : 'session';

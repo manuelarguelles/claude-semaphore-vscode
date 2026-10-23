@@ -2,7 +2,7 @@
   "name": "claude-semaphore",
   "displayName": "Claude + Codex Semáforo",
   "description": "Organize, inspect and manage local Claude Code and Codex sessions in VS Code, with optional lifecycle signals.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "manuelarguelles",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -102,6 +102,21 @@
           "type": "string",
           "default": "codex",
           "description": "Ruta al ejecutable de codex. Se detecta desde PATH y ubicaciones comunes."
+        },
+        "claudeSemaphore.opencode.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show local OpenCode sessions (macOS/Linux; requires lsof, ps and sqlite3). Reads its local database only; pending permission prompts cannot be detected."
+        },
+        "claudeSemaphore.opencode.windowMs": {
+          "type": "number",
+          "default": 10,
+          "description": "Ventana de actividad (minutos) para considerar viva una sesión de OpenCode compartida entre varios procesos."
+        },
+        "claudeSemaphore.opencode.path": {
+          "type": "string",
+          "default": "opencode",
+          "description": "Ruta al ejecutable de opencode. Se detecta desde PATH y ubicaciones comunes."
         },
         "claudeSemaphore.hooks.nodePath": {
           "type": "string",
@@ -389,6 +404,7 @@
       "restrictedConfigurations": [
         "claudeSemaphore.claude.path",
         "claudeSemaphore.codex.path",
+        "claudeSemaphore.opencode.path",
         "claudeSemaphore.hooks.nodePath"
       ]
     }

@@ -1,3 +1,9 @@
+# 1.1.1
+
+- Add OpenCode as a third provider: live sessions are read from its local SQLite database (`~/.local/share/opencode/opencode.db`) without native dependencies; running comes only from `step-start` events and stopped from completed assistant messages, with an honest bootstrap otherwise.
+- Start, resume (`-s`), fork (`-s --fork`) and native continue (`-c`) for OpenCode; hooks configuration is not offered because OpenCode does not expose local hooks.
+- New settings `opencode.enabled`, `opencode.path` and `opencode.windowMs` (activity window for sessions shared between several TUI processes in the same cwd).
+
 # 1.1.0
 
 - Group sessions by project; search, combine filters, pin favorites and prioritize attention.

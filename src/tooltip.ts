@@ -13,6 +13,11 @@ export function formatTooltip(s: SessionState, label: string, hasTerminal: boole
     lines.push('Los permisos y preguntas no registrados pueden no detectarse.');
     if (s.state === 'unknown') lines.push('No hay un evento suficiente para determinar el estado.');
   }
+  if (s.provider === 'opencode') {
+    lines.push('OpenCode · estado observado en su base de datos local');
+    lines.push('Las preguntas de permisos pendientes pueden no detectarse.');
+    if (s.state === 'unknown') lines.push('No hay un evento suficiente para determinar el estado.');
+  }
   if (!hasTerminal) {
     lines.push('(sin terminal en esta ventana)');
   }

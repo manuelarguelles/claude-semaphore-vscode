@@ -25,11 +25,13 @@ export async function inspectAgent(provider: Provider, executable: string): Prom
   try {
     const binary = await resolveExecutable(executable);
     const [help, version] = await Promise.all([runExecutable(binary, ['--help']), runExecutable(binary, ['--version'])]);
-    const resume = provider === 'claude' ? /--resume\b/.test(help) : /\bresume\b/.test(help);
-    const fork = provider === 'claude' ? resume && /--fork-session\b/.test(help) : /\bfork\b/.test(help);
+    const resume = provider === 'claude' ? /--resume\b/.test(help) : provider === 'opencode' ? /--session\b/.test(help) : /\bresume\b/.test(help);
+    const fork = provider === 'claude' ? resume && /--fork-session\b/.test(help) : provider === 'opencode' ? resume && /--fork\b/.test(help) : /\bfork\b/.test(help);
     let hooks = false;
     if (provider === 'codex') {
       try { hooks = /^hooks\s+stable\s+true\s*$/m.test(await runExecutable(binary, ['features', 'list'])); } catch {}
+    } else if (provider === 'opencode') {
+      hooks = false; // OpenCode no expone hooks locales configurables (observación vía su base de datos).
     } else {
       const numbers = version.match(/(\d+)\.(\d+)\.(\d+)/)?.slice(1).map(Number);
       hooks = /--settings\b/.test(help) && !!numbers && (numbers[0] > 2 || (numbers[0] === 2 && (numbers[1] > 1 || (numbers[1] === 1 && numbers[2] >= 295))));

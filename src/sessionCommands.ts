@@ -18,7 +18,7 @@ export function registerSessionCommands(context: vscode.ExtensionContext, servic
     try { await fn(row); } catch (error) { await vscode.window.showErrorMessage(`Semáforo: ${error instanceof Error ? error.message : String(error)}`); }
   }));
   const chooseProvider = async (): Promise<Provider | undefined> => {
-    const choice = await vscode.window.showQuickPick([{ label: 'Claude Code', provider: 'claude' as const }, { label: 'Codex', provider: 'codex' as const }], { placeHolder: 'Elige el agente' });
+    const choice = await vscode.window.showQuickPick([{ label: 'Claude Code', provider: 'claude' as const }, { label: 'Codex', provider: 'codex' as const }, { label: 'OpenCode', provider: 'opencode' as const }], { placeHolder: 'Elige el agente' });
     return choice?.provider;
   };
   const chooseFolder = async (): Promise<string | undefined> => {
@@ -32,7 +32,7 @@ export function registerSessionCommands(context: vscode.ExtensionContext, servic
   });
   register('filters', async () => {
     const options: { label: string; value: string; picked: boolean }[] = [
-      ...(['claude', 'codex'] as const).map(p => ({ label: `Proveedor: ${p}`, value: `provider:${p}`, picked: services.getView().provider === p })),
+      ...(['claude', 'codex', 'opencode'] as const).map(p => ({ label: `Proveedor: ${p}`, value: `provider:${p}`, picked: services.getView().provider === p })),
       ...(Object.keys(stateLabels) as SemaphoreState[]).map(s => ({ label: `Estado: ${stateLabels[s]}`, value: `state:${s}`, picked: services.getView().state === s })),
       { label: 'Solo favoritas', value: 'favorites', picked: services.getView().favoritesOnly },
     ];

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { CodexReader, discoverCodexRollouts, OpenRollout } from './codexSessions';
+import { OpenCodeReader, discoverOpenCodeProcesses, OpenCodeProcess } from './opencodeSessions';
 import { sessionKey, persistentSessionKey } from './sessionIdentity';
 import { SessionTree } from './sessionTree';
 import { integrateSessions } from './sessionIntegration';
@@ -119,6 +120,12 @@ export function activate(context: vscode.ExtensionContext): void {
   let nextDiscovery = 0;
   let codexError = false;
   let warnedCodex = false;
+
+  const opencodeReader = new OpenCodeReader();
+  let opencodeProcesses: OpenCodeProcess[] = [];
+  let nextOpencodeDiscovery = 0;
+  let opencodeError = false;
+  let warnedOpencode = false;
   let refreshing = false;
   let disposed = false;
   context.subscriptions.push({ dispose: () => { disposed = true; } });
@@ -164,6 +171,35 @@ export function activate(context: vscode.ExtensionContext): void {
         codexFiles = []; codexReader.prune([]); nextDiscovery = 0;
         codexError = codexEnabled && process.platform === 'win32';
       }
+
+      const opencodeEnabled = vscode.workspace.getConfiguration('claudeSemaphore').get<boolean>('opencode.enabled', true);
+      if (opencodeEnabled && process.platform !== 'win32') {
+        if (Date.now() >= nextOpencodeDiscovery) {
+          nextOpencodeDiscovery = Date.now() + 10000;
+          try {
+            opencodeProcesses = await discoverOpenCodeProcesses();
+          } catch {
+            opencodeProcesses = [];
+            if (!warnedOpencode) {
+              warnedOpencode = true;
+              vscode.window.showWarningMessage('Semáforo: no se pudo consultar OpenCode con lsof/ps. Claude y Codex siguen disponibles.');
+            }
+          }
+        }
+        const opencodeLive = opencodeProcesses.filter(p => isAlive(p.pid));
+        try {
+          const opencodeSessions = await opencodeReader.read(
+            opencodeLive,
+            vscode.workspace.getConfiguration('claudeSemaphore').get<number>('opencode.windowMs', 10) * 60_000,
+          );
+          sessions.push(...opencodeSessions);
+          opencodeError = false;
+        } catch {
+          opencodeError = opencodeLive.length > 0;
+        }
+      } else {
+        opencodeProcesses = []; opencodeError = opencodeEnabled && process.platform === 'win32';
+      }
       sessions.sort((a, b) => a.title.localeCompare(b.title) || sessionKey(a).localeCompare(sessionKey(b)));
       if (disposed) return;
       const events = await readSessionEvents(integration.eventsDirectory, Date.now(), sessions);
@@ -191,7 +227,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (sum.unknown) statusBar.text += ` $(question)${sum.unknown}`;
       if (sum.error) statusBar.text += ` ${styleFor(theme, 'error').summaryGlyph}${sum.error}`;
       if (codexError) statusBar.text += ' $(warning)';
-      statusBar.tooltip = `Claude + Codex Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}`;
+      statusBar.tooltip = `Claude + Codex + OpenCode Semáforo — clic para ver las sesiones${codexError ? '\nCodex no disponible (requiere lsof en macOS/Linux).' : ''}${opencodeError && !codexError ? '\nOpenCode no disponible (requiere lsof/ps/sqlite3 en macOS/Linux).' : ''}`;
       dbg(`refresh #${seq} ok: files=${sessions.length} summary=${JSON.stringify(sum)}`);
 
       if (sawUnknownSchema && !warnedSchema) {

@@ -19,7 +19,7 @@ export class SessionJournal {
     const raw = data as Partial<JournalData> | undefined;
     if (raw?.version !== 1 || !Array.isArray(raw.sessions)) return;
     for (const r of raw.sessions.slice(-1000)) {
-      if (!r || !['claude', 'codex'].includes(r.provider) || !text(r.sessionId, 200) || !r.sessionId || !text(r.cwd, 4096)
+      if (!r || !['claude', 'codex', 'opencode'].includes(r.provider) || !text(r.sessionId, 200) || !r.sessionId || !text(r.cwd, 4096)
         || !text(r.title) || !finite(r.lastSeenAt) || r.lastSeenAt > this.now() || !Array.isArray(r.events)) continue;
       const events: StateEvent[] = [];
       for (const e of r.events.slice(-200)) {
